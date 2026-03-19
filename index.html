@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NEXUS AI Marketing Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+  body { background: #07090b; font-family: 'Inter', sans-serif; color: #c5d5e8; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #283040; border-radius: 2px; }
+  input, textarea, select { font-family: 'Inter', sans-serif; }
+  input:focus, textarea:focus, select:focus { outline: none !important; border-color: #4488ff !important; box-shadow: 0 0 0 3px rgba(68,136,255,0.12) !important; }
+  select option { background: #111820; color: #c5d5e8; }
+  input::placeholder, textarea::placeholder { color: #283040; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .fade-in { animation: fadeIn 0.25s ease forwards; }
+  button { cursor: pointer; font-family: 'Inter', sans-serif; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ─── API KEY CONFIG ───────────────────────────────────────────────────────────
+// Replace YOUR_API_KEY_HERE with your actual Anthropic API key before deploying
+const HARDCODED_KEY = "YOUR_API_KEY_HERE";
+
+// ─── COLORS ───────────────────────────────────────────────────────────────────
+const C = {
+  bg:"#07090b", card:"#0d1117", panel:"#111820", border:"#1a2030",
+  dim:"#283040", muted:"#4a5870", body:"#8ea0b8", text:"#c5d5e8", white:"#e8f0fa",
+  green:"#00cc88", blue:"#4488ff", amber:"#f0a030", red:"#ff4466",
+  purple:"#9966ff", cyan:"#00ccee", pink:"#ff66aa",
+};
+const mono = "'JetBrains Mono',monospace";
+const ui   = "'Inter',sans-serif";
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+const SYSTEM = `You are an expert AI Marketing Agent specialized in the Malaysian market, Kuala Lumpur. You help local business owners grow their digital presence on Instagram, Facebook, Google Business Profile, Websites (SEO), and Ads.
+
+Write in a natural human-like way. Casual/bold for social media, professional for Google Business and ads.
+
+STRICT OUTPUT — return ONLY valid raw JSON, zero markdown, zero backticks:
+{"action":"short title","content":"full generated content","reason":"why this works for Malaysian audience","expected_result":"realistic engagement/reach/leads prediction"}`;
+
+async function callAgent(apiKey, prompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key": apiKey, "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true"},
+    body: JSON.stringify({
+      model:"claude-sonnet-4-20250514", max_tokens:2000, system:SYSTEM,
+      messages:[{role:"user",content:prompt}]
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.error?.message || `API Error ${res.status}`);
+  }
+  const d = await res.json();
+  const raw = d.content[0].text.trim().replace(/^```json\s*/i,"").replace(/\s*```$/,"").trim();
+  try { return JSON.parse(raw); }
+  catch { return {action:"Response",content:raw,reason:"Direct output",expected_result:"See above"}; }
+}
+
+// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
+const { useState, useCallback, useEffect, useRef } = React;
+
+function Field({label, hint, children}) {
+  return (
+    <div style={{marginBottom:14}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+        <label style={{fontFamily:ui,fontSize:12,fontWeight:600,color:C.body}}>{label}</label>
+        {hint && <span style={{fontFamily:ui,fontSize:11,color:C.muted}}>{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const iS = (x={}) => ({
+  width:"100%", padding:"10px 12px",
+  background:C.panel, border:`1px solid ${C.border}`,
+  borderRadius:7, color:C.text, fontFamily:ui, fontSize:13,
+  boxSizing:"border-box", transition:"border-color 0.15s", ...x
+});
+
+function G2({children,gap=12}) {
+  return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap}}>{children}</div>;
+}
+function G3({children}) {
+  return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>{children}</div>;
+}
+
+function Pills({items, value, onChange, color=C.blue}) {
+  return (
+    <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+      {items.map(item => {
+        const v = typeof item==="string"?item:item.value;
+        const l = typeof item==="string"?item:item.label;
+        const on = value===v;
+        return (
+          <div key={v} onClick={()=>onChange(v)} style={{
+            padding:"7px 15px", borderRadius:20, cursor:"pointer",
+            border:`1px solid ${on?color:C.border}`,
+            background: on?color+"22":"transparent",
+            fontFamily:ui, fontSize:12, fontWeight: on?600:400,
+            color: on?color:C.muted, transition:"all 0.12s", userSelect:"none",
+          }}>{l}</div>
+        );
+      })}
+    </div>
+  );
+}
+
+function LangToggle({value,onChange}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+      <span style={{fontFamily:ui,fontSize:12,fontWeight:600,color:C.body}}>Language:</span>
+      {[["en","🇬🇧 English"],["bm","🇲🇾 Bahasa Malaysia"],["both","Both"]].map(([v,l])=>(
+        <div key={v} onClick={()=>onChange(v)} style={{
+          padding:"5px 13px", borderRadius:20, cursor:"pointer",
+          border:`1px solid ${value===v?C.blue:C.border}`,
+          background:value===v?C.blue+"22":"transparent",
+          fontFamily:ui,fontSize:11,fontWeight:500,
+          color:value===v?C.blue:C.muted, transition:"all 0.12s",
+        }}>{l}</div>
+      ))}
+    </div>
+  );
+}
+
+function RunBtn({onClick,disabled,color=C.green,children,full=false}) {
+  const [hover,setHover] = useState(false);
+  return (
+    <button onClick={onClick} disabled={disabled}
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      style={{
+        padding:"12px 28px", width:full?"100%":"auto",
+        background: disabled?"transparent": hover?color+"33":color+"22",
+        border:`1.5px solid ${disabled?C.dim:color}`,
+        color:disabled?C.muted:color,
+        borderRadius:8, fontWeight:700, fontSize:14,
+        cursor:disabled?"not-allowed":"pointer", transition:"all 0.15s",
+        letterSpacing:"0.01em",
+      }}>{children}</button>
+  );
+}
+
+function CopyBtn({text}) {
+  const [done,setDone] = useState(false);
+  const copy = () => {
+    navigator.clipboard?.writeText(text||"").then(()=>{setDone(true);setTimeout(()=>setDone(false),2000);});
+  };
+  return (
+    <button onClick={copy} style={{
+      padding:"5px 14px",
+      background:done?C.green+"22":"transparent",
+      border:`1px solid ${done?C.green:C.dim}`,
+      color:done?C.green:C.muted, borderRadius:5,
+      fontSize:11,fontWeight:500, transition:"all 0.2s",
+    }}>{done?"✓ Copied!":"Copy"}</button>
+  );
+}
+
+function ErrorBanner({msg,onClose}) {
+  if (!msg) return null;
+  return (
+    <div style={{padding:"12px 16px",background:C.red+"15",border:`1px solid ${C.red}44`,borderRadius:8,marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <span style={{fontFamily:ui,fontSize:13,color:C.red}}>⚠ {msg}</span>
+      <button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:18,padding:"0 4px"}}>×</button>
+    </div>
+  );
+}
+
+function BizBanner({biz,onEdit}) {
+  if (!biz.name) return (
+    <div style={{padding:"10px 14px",background:C.amber+"12",border:`1px solid ${C.amber}30`,borderRadius:7,marginBottom:18,display:"flex",alignItems:"center",gap:8}}>
+      <span style={{fontSize:14}}>💡</span>
+      <span style={{fontFamily:ui,fontSize:12,color:C.amber}}>Set your business profile on the <b>Dashboard</b> for better results on every module.</span>
+    </div>
+  );
+  return (
+    <div style={{padding:"8px 14px",background:C.green+"12",border:`1px solid ${C.green}30`,borderRadius:7,marginBottom:18,display:"flex",alignItems:"center",gap:10}}>
+      <div style={{width:7,height:7,borderRadius:"50%",background:C.green,flexShrink:0}}/>
+      <span style={{fontFamily:ui,fontSize:12,fontWeight:600,color:C.green}}>Active:</span>
+      <span style={{fontFamily:ui,fontSize:12,color:C.body}}>{biz.name} · {biz.industry||"—"} · {biz.location}</span>
+      <button onClick={onEdit} style={{marginLeft:"auto",padding:"3px 10px",background:"none",border:`1px solid ${C.dim}`,borderRadius:4,color:C.muted,fontSize:11}}>Edit</button>
+    </div>
+  );
+}
+
+function OutputCard({res,loading,color=C.green,onSave}) {
+  if (!res && !loading) return null;
+  if (loading) return (
+    <div className="fade-in" style={{marginTop:16,padding:18,background:C.card,border:`1px solid ${C.border}`,borderLeft:`3px solid ${color}`,borderRadius:8,display:"flex",alignItems:"center",gap:10}}>
+      <span style={{display:"inline-block",animation:"spin 0.8s linear infinite",color}}>◌</span>
+      <span style={{fontFamily:ui,fontSize:13,color}}>Agent is thinking…</span>
+    </div>
+  );
+  return (
+    <div className="fade-in" style={{marginTop:16,background:C.card,border:`1px solid ${C.border}`,borderLeft:`3px solid ${color}`,borderRadius:8,overflow:"hidden"}}>
+      <div style={{padding:"10px 16px",background:C.panel,borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:7,height:7,borderRadius:"50%",background:color,boxShadow:`0 0 7px ${color}`}}/>
+          <span style={{fontFamily:ui,fontWeight:700,fontSize:12,color,letterSpacing:"0.04em"}}>{res.action}</span>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <CopyBtn text={res.content}/>
+          {onSave && <button onClick={onSave} style={{padding:"5px 14px",background:"transparent",border:`1px solid ${C.dim}`,color:C.muted,borderRadius:5,fontSize:11,fontWeight:500}}>💾 Save</button>}
+        </div>
+      </div>
+      <div style={{padding:"18px 20px"}}>
+        <div style={{fontFamily:ui,fontSize:13,color:C.white,lineHeight:1.85,whiteSpace:"pre-wrap",marginBottom:16}}>{res.content}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,borderTop:`1px solid ${C.border}`,paddingTop:14}}>
+          <div style={{background:C.panel,borderRadius:7,padding:"12px 14px"}}>
+            <div style={{fontFamily:ui,fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",marginBottom:6,textTransform:"uppercase"}}>Why This Works</div>
+            <p style={{fontFamily:ui,fontSize:12,color:C.body,margin:0,lineHeight:1.65}}>{res.reason}</p>
+          </div>
+          <div style={{background:C.amber+"10",border:`1px solid ${C.amber}22`,borderRadius:7,padding:"12px 14px"}}>
+            <div style={{fontFamily:ui,fontSize:10,fontWeight:700,color:C.amber,letterSpacing:"0.08em",marginBottom:6,textTransform:"uppercase"}}>Expected Result</div>
+            <p style={{fontFamily:ui,fontSize:12,color:C.amber,margin:0,lineHeight:1.65}}>{res.expected_result}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({title,sub,color}) {
+  return (
+    <div style={{marginBottom:24}}>
+      <h2 style={{fontFamily:ui,fontWeight:800,fontSize:22,color:C.white,margin:"0 0 6px"}}>{title}</h2>
+      <p style={{fontFamily:ui,fontSize:13,color:C.muted,margin:0}}>{sub}</p>
+      <div style={{width:40,height:3,background:color,borderRadius:2,marginTop:10}}/>
+    </div>
+  );
+}
+
+// ─── SETUP / API KEY MODAL ────────────────────────────────────────────────────
+function SetupModal({onDone}) {
+  const [key,setKey] = useState("");
+  const [err,setErr] = useState("");
+  const [testing,setTesting] = useState(false);
+
+  const test = async () => {
+    if (!key.trim()) return;
+    setTesting(true); setErr("");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":key.trim(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:10,messages:[{role:"user",content:"hi"}]})
+      });
+      if (res.ok) { onDone(key.trim()); }
+      else { const e = await res.json(); setErr(e.error?.message||"Invalid API key"); }
+    } catch(e) { setErr("Connection failed. Check your key and try again."); }
+    setTesting(false);
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(7,9,11,0.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:20}}>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:40,maxWidth:480,width:"100%"}}>
+        <div style={{fontFamily:ui,fontWeight:900,fontSize:28,color:C.white,marginBottom:6}}>NEXUS</div>
+        <div style={{fontFamily:ui,fontSize:13,color:C.muted,marginBottom:28}}>AI Marketing Agent — Enter your Anthropic API key to begin</div>
+        <Field label="Anthropic API Key">
+          <input type="password" value={key} onChange={e=>setKey(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&test()}
+            placeholder="sk-ant-..." style={iS()} />
+        </Field>
+        {err && <div style={{padding:"10px 14px",background:C.red+"15",border:`1px solid ${C.red}44`,borderRadius:7,marginBottom:14,fontFamily:ui,fontSize:12,color:C.red}}>{err}</div>}
+        <RunBtn onClick={test} disabled={testing||!key.trim()} color={C.green} full>
+          {testing?"Testing connection…":"Connect & Start"}
+        </RunBtn>
+        <p style={{fontFamily:ui,fontSize:11,color:C.dim,marginTop:14,lineHeight:1.6}}>
+          Get your API key at <a href="https://console.anthropic.com" target="_blank" style={{color:C.blue}}>console.anthropic.com</a>. Your key is never stored — it only lives in this browser session.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── MODULES LIST ─────────────────────────────────────────────────────────────
+const MODS = [
+  {id:"home",     label:"Dashboard",         icon:"⌂", color:C.green },
+  {id:"content",  label:"Content Creator",   icon:"✦", color:C.blue  },
+  {id:"seo",      label:"SEO Writer",        icon:"◎", color:C.green },
+  {id:"gbp",      label:"Google Business",   icon:"◇", color:C.amber },
+  {id:"engage",   label:"Reply Assistant",   icon:"◉", color:C.cyan  },
+  {id:"ads",      label:"Ads Generator",     icon:"▲", color:C.red   },
+  {id:"whatsapp", label:"WhatsApp Blasts",   icon:"◈", color:C.green },
+  {id:"festive",  label:"Festive Campaigns", icon:"★", color:C.pink  },
+  {id:"email",    label:"Email Marketing",   icon:"✉", color:C.purple},
+  {id:"strategy", label:"Strategy Engine",   icon:"◆", color:C.purple},
+  {id:"history",  label:"Saved Results",     icon:"≡", color:C.muted },
+];
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function Home({counts,history,onNav,biz,onSetBiz}) {
+  const [n,setN]=useState(biz.name||"");
+  const [ind,setInd]=useState(biz.industry||"");
+  const [loc,setLoc]=useState(biz.location||"KL (General)");
+  const [saved,setSaved]=useState(false);
+
+  const save=()=>{if(n.trim()){onSetBiz({name:n,industry:ind,location:loc});setSaved(true);setTimeout(()=>setSaved(false),2500);}};
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+
+  return (
+    <div>
+      <div style={{marginBottom:28,paddingBottom:24,borderBottom:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+          <div style={{width:8,height:8,borderRadius:"50%",background:C.green,boxShadow:`0 0 10px ${C.green}`,animation:"pulse 2s infinite"}}/>
+          <span style={{fontFamily:ui,fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",textTransform:"uppercase"}}>Autonomous Mode Active</span>
+        </div>
+        <h1 style={{fontFamily:ui,fontWeight:900,fontSize:34,color:C.white,margin:"0 0 10px",letterSpacing:"-0.02em"}}>NEXUS AI Marketing Agent</h1>
+        <p style={{fontFamily:ui,fontSize:14,color:C.body,margin:0,maxWidth:600,lineHeight:1.7}}>
+          Your fully automated digital marketing manager. Generate content, write SEO articles, manage Google Business, create ads, WhatsApp blasts, festive campaigns and more — in seconds.
+        </p>
+      </div>
+
+      <div style={{padding:"22px",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:24}}>
+        <div style={{fontFamily:ui,fontSize:15,fontWeight:700,color:C.white,marginBottom:4}}>⚙ Your Business Profile</div>
+        <div style={{fontFamily:ui,fontSize:12,color:C.muted,marginBottom:16}}>Set once — automatically used across all 10 modules</div>
+        <G3>
+          <Field label="Business Name">
+            <input value={n} onChange={e=>setN(e.target.value)} placeholder="e.g. Mavis Eco Cool" style={iS()} />
+          </Field>
+          <Field label="Industry">
+            <select value={ind} onChange={e=>setInd(e.target.value)} style={iS()}>
+              <option value="">Select industry…</option>
+              {["HVAC / Air Conditioning","F&B / Restaurant","Retail / Fashion","Beauty / Salon","Property / Real Estate","Professional Services","Automotive","Education / Tuition","Digital Marketing Agency","Health & Wellness","Other"].map(i=><option key={i}>{i}</option>)}
+            </select>
+          </Field>
+          <Field label="Location">
+            <select value={loc} onChange={e=>setLoc(e.target.value)} style={iS()}>
+              {["KL (General)","KLCC / Bukit Bintang","Bangsar / Mid Valley","Petaling Jaya","Subang Jaya / Shah Alam","Cheras / Ampang","Puchong / Cyberjaya","Klang / Port Klang","Selangor (General)","Malaysia (Nationwide)"].map(l=><option key={l}>{l}</option>)}
+            </select>
+          </Field>
+        </G3>
+        <RunBtn onClick={save} disabled={!n.trim()} color={C.green}>
+          {saved?"✓ Saved!":"Save Business Profile"}
+        </RunBtn>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:28}}>
+        {[{l:"Total Generated",v:total,c:C.green},{l:"Content Created",v:counts.content||0,c:C.blue},{l:"SEO Articles",v:counts.seo||0,c:C.green},{l:"Results Saved",v:history.length,c:C.purple}].map(k=>(
+          <div key={k.l} style={{padding:"16px 18px",background:C.card,border:`1px solid ${C.border}`,borderRadius:10}}>
+            <div style={{fontFamily:ui,fontSize:11,color:C.muted,marginBottom:10}}>{k.l}</div>
+            <div style={{fontFamily:ui,fontWeight:800,fontSize:32,color:k.c}}>{k.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{fontFamily:ui,fontWeight:700,fontSize:16,color:C.white,marginBottom:14}}>What Can NEXUS Do For Your Business?</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+        {[
+          {id:"content", icon:"✦",title:"Content Creator",color:C.blue,   desc:"Instagram, Facebook, TikTok, LinkedIn captions. 3 variations per run. English & Bahasa Malaysia."},
+          {id:"seo",     icon:"◎",title:"SEO Writer",     color:C.green,  desc:"Full blog posts that rank on Google KL. Keyword research, meta tags, FAQs — all included."},
+          {id:"gbp",     icon:"◇",title:"Google Business",color:C.amber,  desc:"GBP posts, review replies, description rewrite, and local SEO audit to get found on Google Maps."},
+          {id:"engage",  icon:"◉",title:"Reply Assistant",color:C.cyan,   desc:"Natural human-sounding replies to comments and reviews. Single reply or 12 bulk templates."},
+          {id:"ads",     icon:"▲",title:"Ads Generator",  color:C.red,    desc:"Complete Meta & Google Ads strategy — headline, copy, audience, RM budget split, A/B test."},
+          {id:"whatsapp",icon:"◈",title:"WhatsApp Blasts",color:C.green,  desc:"Ready-to-send broadcast messages for promos, reminders, announcements, and follow-ups."},
+          {id:"festive", icon:"★",title:"Festive Campaigns",color:C.pink, desc:"Full campaign packages for Hari Raya, CNY, Deepavali, Merdeka, Year-End, and more."},
+          {id:"email",   icon:"✉",title:"Email Marketing", color:C.purple,desc:"Newsletters, promo emails, welcome sequences, and re-engagement campaigns."},
+          {id:"strategy",icon:"◆",title:"Strategy Engine", color:C.purple,desc:"30-day marketing plan, content calendar, competitor analysis, and campaign scoring."},
+        ].map(m=>(
+          <div key={m.id} onClick={()=>onNav(m.id)} style={{
+            padding:"16px",background:C.card,border:`1px solid ${C.border}`,
+            borderRadius:10,cursor:"pointer",borderLeft:`3px solid ${m.color}`,
+            transition:"transform 0.12s, border-color 0.12s",
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=m.color;}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor=m.color;}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{color:m.color,fontSize:13}}>{m.icon}</span>
+              <span style={{fontFamily:ui,fontWeight:700,fontSize:13,color:m.color}}>{m.title}</span>
+            </div>
+            <p style={{fontFamily:ui,fontSize:12,color:C.muted,margin:0,lineHeight:1.6}}>{m.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── CONTENT CREATOR ──────────────────────────────────────────────────────────
+function ContentCreator({apiKey,biz,onNav,onSave,onLog}) {
+  const [platform,setP]=useState("Instagram");
+  const [tone,setT]=useState("Bold & Engaging");
+  const [topic,setTp]=useState("");
+  const [lang,setLang]=useState("en");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const run=async()=>{
+    if(!topic.trim())return;
+    setL(true);setR(null);setE("");
+    try{
+      const r=await callAgent(apiKey,`CONTENT CREATION
+Business: ${biz.name||"KL local business"}, ${biz.industry||""}, ${biz.location||"KL"}
+Platform: ${platform} | Tone: ${tone}
+Language: ${lang==="en"?"English":lang==="bm"?"Bahasa Malaysia":"Both English AND Bahasa Malaysia (provide both)"}
+Topic: ${topic}
+
+Generate 3 caption variations. Each must include:
+1. Strong hook (question/bold statement/local reference)
+2. Engaging body suited to ${platform}
+3. Clear call-to-action
+4. Malaysian/KL-focused hashtags
+5. Best posting time recommendation
+Sound completely human, never robotic.`);
+      setR(r);onSave(r,"Content Creator");onLog("content");
+    }catch(e){setE(e.message||"Something went wrong.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="Content Creator" sub="Generate captions for Instagram, Facebook, TikTok, LinkedIn & more" color={C.blue}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <LangToggle value={lang} onChange={setLang}/>
+      <G2>
+        <Field label="Platform">
+          <select value={platform} onChange={e=>setP(e.target.value)} style={iS()}>
+            {["Instagram","Facebook","TikTok","LinkedIn","Twitter/X","Google Business Post"].map(p=><option key={p}>{p}</option>)}
+          </select>
+        </Field>
+        <Field label="Tone / Style">
+          <select value={tone} onChange={e=>setT(e.target.value)} style={iS()}>
+            {["Bold & Engaging","Casual & Friendly","Professional","Educational / Tips","Urgent / Promo","Fun & Relatable"].map(t=><option key={t}>{t}</option>)}
+          </select>
+        </Field>
+      </G2>
+      <Field label="What is this post about?" hint="Be specific for better results">
+        <textarea value={topic} onChange={e=>setTp(e.target.value)} rows={4}
+          placeholder="e.g. Hari Raya promo — 20% off aircon cleaning for Klang Valley homes. Book via WhatsApp before 30 April. Limited slots."
+          style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading||!topic.trim()} color={C.blue} full>
+        {loading?"✦ Generating Captions…":"✦ Generate 3 Caption Variations"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.blue} onSave={()=>onSave(res,"Content Creator")}/>
+    </div>
+  );
+}
+
+// ─── SEO WRITER ───────────────────────────────────────────────────────────────
+function SEOWriter({apiKey,biz,onNav,onSave,onLog}) {
+  const [mode,setMode]=useState("blog");
+  const [kw,setKw]=useState("");
+  const [len,setLen]=useState("800");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const run=async()=>{
+    if(!kw.trim())return;
+    setL(true);setR(null);setE("");
+    const ps={
+      blog:`Write a full SEO blog post (~${len} words) for keyword "${kw}". Business: ${biz.name||"KL business"}, ${biz.industry||""}, ${biz.location||"KL"}. Include: H1, meta description (max 155 chars), 4-5 H2 sections with LSI keywords, FAQ section (4 questions), strong CTA. Optimize for Malaysian Google search.`,
+      meta:`On-page SEO for keyword "${kw}". Business: ${biz.name||"KL business"}. Provide: 3 page title options, meta description, H1 rewrite, 4 H2 suggestions, image alt text, internal linking anchors. KL local SEO focus.`,
+      ideas:`Generate 10 blog ideas for ${biz.name||"KL business"} (${biz.industry||""}) around "${kw}". For each: SEO title, exact keyword, search intent, competition level. Malaysian market focus.`,
+      backlink:`Backlink strategy for "${kw}" in Malaysia. List 10 specific opportunities: website type, how to get link, DA tier, SEO impact. Focus on Malaysian sources.`,
+    };
+    try{
+      const r=await callAgent(apiKey,`SEO TASK\n${ps[mode]}`);
+      setR(r);onSave(r,"SEO Writer");onLog("seo");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="SEO Writer" sub="Blog posts, keywords, on-page SEO, and backlink strategy for Google ranking" color={C.green}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <Field label="Select Task">
+        <Pills items={[{value:"blog",label:"📝 Blog Post"},{value:"meta",label:"🔍 On-Page SEO"},{value:"ideas",label:"💡 Topic Ideas"},{value:"backlink",label:"🔗 Backlinks"}]} value={mode} onChange={setMode} color={C.green}/>
+      </Field>
+      <G2>
+        <Field label="Target Keyword" hint="What do you want to rank for?">
+          <input value={kw} onChange={e=>setKw(e.target.value)} placeholder="e.g. aircon service KL, digital marketing Malaysia" style={iS()}/>
+        </Field>
+        {mode==="blog"&&(
+          <Field label="Article Length">
+            <Pills items={[{value:"500",label:"Short ~500w"},{value:"800",label:"Medium ~800w"},{value:"1200",label:"Long ~1200w"}]} value={len} onChange={setLen} color={C.green}/>
+          </Field>
+        )}
+      </G2>
+      <RunBtn onClick={run} disabled={loading||!kw.trim()} color={C.green} full>
+        {loading?"◎ Processing…":"◎ Run SEO Agent"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.green} onSave={()=>onSave(res,"SEO Writer")}/>
+    </div>
+  );
+}
+
+// ─── GOOGLE BUSINESS ──────────────────────────────────────────────────────────
+function GoogleBiz({apiKey,biz,onNav,onSave,onLog}) {
+  const [task,setTask]=useState("post");
+  const [input,setInput]=useState("");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const TASKS=[
+    {id:"post",label:"📣 Create Post",ph:"Promo, event, or service update..."},
+    {id:"review",label:"💬 Reply to Review",ph:"Paste the customer review here..."},
+    {id:"desc",label:"✏ Optimize Description",ph:"Your current description (or leave blank)..."},
+    {id:"audit",label:"🔍 Visibility Audit",ph:"Your ranking issues or goals..."},
+  ];
+
+  const run=async()=>{
+    setL(true);setR(null);setE("");
+    const ps={
+      post:`Create a Google Business Profile post for ${biz.name||"KL business"} (${biz.industry||""}, ${biz.location||"KL"}). Content: "${input||"general update"}". Include: compelling title, 150-300 char body, CTA type, posting schedule.`,
+      review:`Write a professional warm reply to this Google review for ${biz.name||"KL business"}: "${input}". Be genuine, address any concern, invite return. Max 100 words. Sound like the real owner.`,
+      desc:`Rewrite Google Business description for ${biz.name||"KL business"} (${biz.industry||""}, ${biz.location||"KL"}). Current: "${input||"none"}". Max 750 chars. Keywords, location, USPs, trust signals, soft CTA.`,
+      audit:`GBP visibility audit for ${biz.name||"KL business"}, ${biz.location||"KL"}. Situation: "${input||"improve local ranking"}". Give 8 specific improvements ranked by impact. KL local pack focus.`,
+    };
+    try{
+      const r=await callAgent(apiKey,`GOOGLE BUSINESS TASK\n${ps[task]}`);
+      setR(r);onSave(r,"Google Business");onLog("gbp");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  const cur=TASKS.find(t=>t.id===task);
+  return (
+    <div>
+      <SectionHeader title="Google Business Manager" sub="Posts, review replies, description optimization, and local SEO audit" color={C.amber}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <Field label="What do you need?">
+        <Pills items={TASKS.map(t=>({value:t.id,label:t.label}))} value={task} onChange={v=>{setTask(v);setR(null);setInput("");}} color={C.amber}/>
+      </Field>
+      <Field label={`${cur.label} — Details`}>
+        <textarea value={input} onChange={e=>setInput(e.target.value)} rows={4} placeholder={cur.ph} style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading} color={C.amber} full>
+        {loading?"◇ Processing…":"◇ Run Google Business Agent"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.amber} onSave={()=>onSave(res,"Google Business")}/>
+    </div>
+  );
+}
+
+// ─── REPLY ASSISTANT ──────────────────────────────────────────────────────────
+function ReplyAssistant({apiKey,biz,onNav,onSave,onLog}) {
+  const [platform,setP]=useState("Instagram");
+  const [sentiment,setS]=useState("Positive");
+  const [comment,setC]=useState("");
+  const [bulk,setBulk]=useState(false);
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const run=async()=>{
+    setL(true);setR(null);setE("");
+    const p=bulk
+      ?`Generate 12 comment reply templates for ${biz.name||"KL business"} on ${platform}. Cover: praise, pricing questions, appointments, complaints (2), curiosity, location questions. Max 2 sentences each. Natural human tone. ${biz.industry||"local business"}, ${biz.location||"KL"}.`
+      :`Reply to this ${sentiment.toLowerCase()} ${platform} comment for ${biz.name||"KL business"}: "${comment}". Match the tone. Sound like the real business owner. Max 2 sentences. ${["Negative","Complaint"].includes(sentiment)?"De-escalate warmly and offer next step.":""}`;
+    try{
+      const r=await callAgent(apiKey,`ENGAGEMENT TASK\n${p}`);
+      setR(r);onSave(r,"Reply Assistant");onLog("engage");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="Reply Assistant" sub="Natural human-sounding replies to comments and reviews across all platforms" color={C.cyan}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {[["Single Reply",false],["12 Bulk Templates",true]].map(([l,v])=>(
+          <div key={l} onClick={()=>setBulk(v)} style={{padding:"8px 18px",borderRadius:20,cursor:"pointer",border:`1px solid ${bulk===v?C.cyan:C.border}`,background:bulk===v?C.cyan+"22":"transparent",fontFamily:ui,fontSize:12,fontWeight:500,color:bulk===v?C.cyan:C.muted,transition:"all 0.12s"}}>{l}</div>
+        ))}
+      </div>
+      <G2>
+        <Field label="Platform">
+          <select value={platform} onChange={e=>setP(e.target.value)} style={iS()}>
+            {["Instagram","Facebook","TikTok","LinkedIn","Google Reviews","WhatsApp"].map(p=><option key={p}>{p}</option>)}
+          </select>
+        </Field>
+        {!bulk&&(
+          <Field label="Comment Type">
+            <select value={sentiment} onChange={e=>setS(e.target.value)} style={iS()}>
+              {["Positive","Neutral","Question / Enquiry","Negative Feedback","Complaint","Price Question"].map(s=><option key={s}>{s}</option>)}
+            </select>
+          </Field>
+        )}
+      </G2>
+      <Field label={bulk?"Any context? (optional)":"Paste the comment"}>
+        <textarea value={comment} onChange={e=>setC(e.target.value)} rows={3}
+          placeholder={bulk?"e.g. Customers often ask about pricing and same-day availability...":"Type or paste the comment here..."}
+          style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading||(!bulk&&!comment.trim())} color={C.cyan} full>
+        {loading?"◉ Generating…":"◉ Generate Reply"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.cyan} onSave={()=>onSave(res,"Reply Assistant")}/>
+    </div>
+  );
+}
+
+// ─── ADS GENERATOR ────────────────────────────────────────────────────────────
+function AdsGen({apiKey,biz,onNav,onSave,onLog}) {
+  const [platform,setP]=useState("Meta Ads (Facebook & Instagram)");
+  const [goal,setG]=useState("Lead Generation");
+  const [product,setPr]=useState("");
+  const [budget,setBu]=useState("");
+  const [target,setTg]=useState("");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const run=async()=>{
+    if(!product.trim())return;
+    setL(true);setR(null);setE("");
+    try{
+      const r=await callAgent(apiKey,`ADS CAMPAIGN
+Business: ${biz.name||"KL business"}, ${biz.industry||""}, ${biz.location||"KL"}
+Platform: ${platform} | Goal: ${goal}
+Product/Service: ${product}
+Budget: ${budget?"RM "+budget+"/month":"suggest appropriate range"}
+Audience: ${target||"KL/Klang Valley Malaysia, relevant demographics"}
+
+Deliver:
+1. Primary headline (≤40 chars)
+2. Ad body copy (≤125 chars Meta / ≤90 Google)
+3. CTA button text
+4. Audience targeting (age, location, interests, behaviors — KL)
+5. Budget split % (awareness vs conversion)
+6. Campaign structure
+7. A/B test variation
+8. Estimated CPL/ROAS for KL market`);
+      setR(r);onSave(r,"Ads Generator");onLog("ads");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="Ads Generator" sub="Full Meta & Google Ads strategy — copy, targeting, budget allocation, and A/B tests" color={C.red}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <G2>
+        <Field label="Ad Platform">
+          <select value={platform} onChange={e=>setP(e.target.value)} style={iS()}>
+            {["Meta Ads (Facebook & Instagram)","Google Search Ads","Google Display Ads","TikTok Ads","Google Performance Max"].map(p=><option key={p}>{p}</option>)}
+          </select>
+        </Field>
+        <Field label="Campaign Goal">
+          <select value={goal} onChange={e=>setG(e.target.value)} style={iS()}>
+            {["Lead Generation","Sales / Conversions","Brand Awareness","Website Traffic","Retargeting","WhatsApp Messages"].map(g=><option key={g}>{g}</option>)}
+          </select>
+        </Field>
+      </G2>
+      <Field label="What are you advertising?" hint="Be specific">
+        <input value={product} onChange={e=>setPr(e.target.value)} placeholder="e.g. Aircon cleaning RM80 per unit, free site visit — KL & PJ only" style={iS()}/>
+      </Field>
+      <G2>
+        <Field label="Monthly Budget (RM)" hint="Optional">
+          <input value={budget} onChange={e=>setBu(e.target.value)} placeholder="e.g. 500, 1500, 3000" style={iS()}/>
+        </Field>
+        <Field label="Target Audience Notes" hint="Optional">
+          <input value={target} onChange={e=>setTg(e.target.value)} placeholder="e.g. homeowners age 28-50, middle income, KL/PJ" style={iS()}/>
+        </Field>
+      </G2>
+      <RunBtn onClick={run} disabled={loading||!product.trim()} color={C.red} full>
+        {loading?"▲ Building Campaign…":"▲ Generate Ad Campaign"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.red} onSave={()=>onSave(res,"Ads Generator")}/>
+    </div>
+  );
+}
+
+// ─── WHATSAPP BLASTS ──────────────────────────────────────────────────────────
+function WhatsAppBlasts({apiKey,biz,onNav,onSave,onLog}) {
+  const [type,setType]=useState("promo");
+  const [detail,setDetail]=useState("");
+  const [lang,setLang]=useState("en");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const TYPES=[
+    {value:"promo",label:"🎁 Promo Blast"},{value:"reminder",label:"📅 Appointment Reminder"},
+    {value:"followup",label:"📞 Follow-Up"},{value:"announce",label:"📢 New Service"},
+    {value:"festival",label:"🎉 Festive Greeting"},
+  ];
+
+  const run=async()=>{
+    setL(true);setR(null);setE("");
+    try{
+      const r=await callAgent(apiKey,`WHATSAPP BLAST
+Business: ${biz.name||"KL business"}, ${biz.industry||""}, ${biz.location||"KL"}
+Type: ${TYPES.find(t=>t.value===type)?.label}
+Language: ${lang==="en"?"English":lang==="bm"?"Bahasa Malaysia":"Both"}
+Details: ${detail||"general message"}
+
+Write 2 WhatsApp broadcast variations (formal & casual):
+- Max 160 words each
+- Warm, conversational, real human tone
+- Clear CTA
+- Max 4 emoji
+- WhatsApp-safe (no spam triggers)`);
+      setR(r);onSave(r,"WhatsApp Blasts");onLog("whatsapp");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="WhatsApp Blast Generator" sub="Ready-to-send broadcast messages — promos, reminders, follow-ups, and announcements" color={C.green}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <LangToggle value={lang} onChange={setLang}/>
+      <Field label="Message Type">
+        <Pills items={TYPES} value={type} onChange={setType} color={C.green}/>
+      </Field>
+      <Field label="Message Details">
+        <textarea value={detail} onChange={e=>setDetail(e.target.value)} rows={4}
+          placeholder="e.g. 20% off all aircon services this weekend only. Limited slots. Book via WhatsApp..."
+          style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading} color={C.green} full>
+        {loading?"◈ Writing…":"◈ Generate WhatsApp Blast"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.green} onSave={()=>onSave(res,"WhatsApp Blasts")}/>
+    </div>
+  );
+}
+
+// ─── FESTIVE CAMPAIGNS ────────────────────────────────────────────────────────
+function FestiveCampaigns({apiKey,biz,onNav,onSave,onLog}) {
+  const [fest,setFest]=useState("hari-raya");
+  const [promo,setPromo]=useState("");
+  const [lang,setLang]=useState("both");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const FESTS=[
+    {value:"hari-raya",label:"🌙 Hari Raya"},{value:"cny",label:"🧧 Chinese New Year"},
+    {value:"deepavali",label:"🪔 Deepavali"},{value:"merdeka",label:"🇲🇾 Merdeka / Malaysia Day"},
+    {value:"year-end",label:"🎉 Year-End Sale"},{value:"christmas",label:"🎄 Christmas"},
+    {value:"mothers-day",label:"💐 Mother's Day"},{value:"school-hol",label:"🏫 School Holidays"},
+  ];
+
+  const run=async()=>{
+    setL(true);setR(null);setE("");
+    const fl=FESTS.find(f=>f.value===fest)?.label;
+    try{
+      const r=await callAgent(apiKey,`FESTIVE CAMPAIGN
+Business: ${biz.name||"KL business"}, ${biz.industry||""}, ${biz.location||"KL"}
+Festival: ${fl}
+Offer: ${promo||"general festive greeting"}
+Language: ${lang==="en"?"English":lang==="bm"?"Bahasa Malaysia":"Both English AND Bahasa Malaysia"}
+
+Generate complete campaign package:
+1. Instagram/Facebook caption (hooks + hashtags)
+2. WhatsApp broadcast message
+3. Google Business Profile post
+4. Campaign tagline/slogan
+5. Ad headline for this festive campaign
+Keep Malaysian cultural context accurate.`);
+      setR(r);onSave(r,"Festive Campaigns");onLog("festive");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="Festive Campaign Generator" sub="Complete campaign packages for Hari Raya, CNY, Deepavali, Merdeka, and more" color={C.pink}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <LangToggle value={lang} onChange={setLang}/>
+      <Field label="Select Festival / Season">
+        <Pills items={FESTS} value={fest} onChange={setFest} color={C.pink}/>
+      </Field>
+      <Field label="Your Promotion or Offer" hint="Optional — leave blank for greeting-only">
+        <textarea value={promo} onChange={e=>setPromo(e.target.value)} rows={3}
+          placeholder="e.g. 15% off all services during Hari Raya, free gift with purchase above RM200..."
+          style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading} color={C.pink} full>
+        {loading?"★ Creating…":"★ Generate Festive Campaign Package"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.pink} onSave={()=>onSave(res,"Festive Campaigns")}/>
+    </div>
+  );
+}
+
+// ─── EMAIL MARKETING ──────────────────────────────────────────────────────────
+function EmailMarketing({apiKey,biz,onNav,onSave,onLog}) {
+  const [type,setType]=useState("promo");
+  const [detail,setDetail]=useState("");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const TYPES=[
+    {value:"promo",label:"📣 Promo Blast"},{value:"newsletter",label:"📰 Newsletter"},
+    {value:"followup",label:"📞 Follow-Up"},{value:"welcome",label:"👋 Welcome Email"},
+    {value:"reactivate",label:"💤 Re-engage"},
+  ];
+
+  const run=async()=>{
+    setL(true);setR(null);setE("");
+    try{
+      const r=await callAgent(apiKey,`EMAIL MARKETING
+Business: ${biz.name||"KL business"}, ${biz.industry||""}, ${biz.location||"KL"}
+Type: ${TYPES.find(t=>t.value===type)?.label}
+Brief: ${detail||"general email"}
+
+Write complete email:
+- 3 subject line variations (curiosity / benefit / urgency)
+- Preview text (max 90 chars)
+- Full email body (warm, professional, human)
+- CTA button text
+- P.S. line
+Malaysian business audience. Avoid spam trigger words.`);
+      setR(r);onSave(r,"Email Marketing");onLog("email");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="Email Marketing" sub="Newsletters, promos, welcome emails, follow-ups, and re-engagement sequences" color={C.purple}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <Field label="Email Type">
+        <Pills items={TYPES} value={type} onChange={setType} color={C.purple}/>
+      </Field>
+      <Field label="Email Brief / Details">
+        <textarea value={detail} onChange={e=>setDetail(e.target.value)} rows={4}
+          placeholder="e.g. Monthly newsletter — highlight new packages, share 3 tips, promote current promo..."
+          style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading} color={C.purple} full>
+        {loading?"✉ Writing…":"✉ Generate Email"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.purple} onSave={()=>onSave(res,"Email Marketing")}/>
+    </div>
+  );
+}
+
+// ─── STRATEGY ENGINE ──────────────────────────────────────────────────────────
+function StrategyEngine({apiKey,biz,onNav,onSave,onLog}) {
+  const [mode,setMode]=useState("plan");
+  const [input,setInput]=useState("");
+  const [loading,setL]=useState(false);
+  const [res,setR]=useState(null);
+  const [error,setE]=useState("");
+
+  const MODES=[
+    {value:"plan",label:"📅 30-Day Plan"},{value:"calendar",label:"🗓 Content Calendar"},
+    {value:"score",label:"📊 Score Content"},{value:"improve",label:"🔧 Fix Campaign"},
+    {value:"compete",label:"🏆 Beat Competitors"},
+  ];
+
+  const run=async()=>{
+    setL(true);setR(null);setE("");
+    const ps={
+      plan:`Create a detailed 30-day digital marketing plan for ${biz.name||"KL business"} (${biz.industry||""}, ${biz.location||"KL"}). Current: ${input||"starting fresh"}. Include weekly focus, daily schedule, platform priorities, KPI targets, 7-day quick wins.`,
+      calendar:`2-week social media content calendar for ${biz.name||"KL business"} (${biz.industry||""}, ${biz.location||"KL"}). Theme: ${input||"general brand awareness"}. Format: Day|Platform|Post Type|Topic|Hook Preview|Hashtag Cluster|Best Time.`,
+      score:`Score this content (0-100) for ${biz.name||"KL business"}: "${input||"no content — give general tips"}". Rate: hook, CTA, engagement potential, SEO value, brand fit. Specific improvements.`,
+      improve:`Fix underperforming campaign for ${biz.name||"KL business"}: "${input||"general issues"}". Provide: 3 copy improvements, 2 audience fixes, 1 strategy change, improvement %.`,
+      compete:`Competitor strategy for ${biz.name||"KL business"} (${biz.industry||""}, ${biz.location||"KL"}). Context: ${input||"general"}. Top 3 competitor weaknesses, 3 positioning opportunities, differentiation strategy for KL market.`,
+    };
+    try{
+      const r=await callAgent(apiKey,`STRATEGY\n${ps[mode]}`);
+      setR(r);onSave(r,"Strategy Engine");onLog("strategy");
+    }catch(e){setE(e.message||"Error.");}
+    setL(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader title="Strategy Engine" sub="Marketing plans, content calendars, campaign fixes, scoring, and competitor analysis" color={C.purple}/>
+      <BizBanner biz={biz} onEdit={()=>onNav("home")}/>
+      <ErrorBanner msg={error} onClose={()=>setE("")}/>
+      <Field label="What do you need?">
+        <Pills items={MODES} value={mode} onChange={setMode} color={C.purple}/>
+      </Field>
+      <Field label="Context / Details" hint="More detail = better strategy">
+        <textarea value={input} onChange={e=>setInput(e.target.value)} rows={4}
+          placeholder={
+            mode==="score"?"Paste your caption, ad copy, or post content here...":
+            mode==="improve"?"Describe your campaign — platform, what you ran, results...":
+            mode==="calendar"?"Campaign theme, key dates, products to feature...":
+            mode==="compete"?"Who are your competitors? Current advantages?":
+            "Current marketing, budget, goals, challenges..."
+          }
+          style={iS({resize:"vertical"})}/>
+      </Field>
+      <RunBtn onClick={run} disabled={loading} color={C.purple} full>
+        {loading?"◆ Analyzing…":"◆ Run Strategy Engine"}
+      </RunBtn>
+      <OutputCard res={res} loading={loading} color={C.purple} onSave={()=>onSave(res,"Strategy Engine")}/>
+    </div>
+  );
+}
+
+// ─── SAVED HISTORY ────────────────────────────────────────────────────────────
+function SavedHistory({history,onClear}) {
+  const [expanded,setExpanded]=useState(null);
+  return (
+    <div>
+      <SectionHeader title="Saved Results" sub="All generated content from this session — copy or review anytime" color={C.muted}/>
+      {history.length===0?(
+        <div style={{padding:"60px 24px",textAlign:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12}}>
+          <div style={{fontSize:36,marginBottom:12}}>📂</div>
+          <div style={{fontFamily:ui,fontSize:15,fontWeight:600,color:C.body,marginBottom:6}}>No saved results yet</div>
+          <div style={{fontFamily:ui,fontSize:13,color:C.muted}}>Click "💾 Save" on any output to store it here</div>
+        </div>
+      ):(
+        <>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <span style={{fontFamily:ui,fontSize:13,color:C.muted}}>{history.length} result{history.length>1?"s":""} saved</span>
+            <button onClick={onClear} style={{padding:"6px 14px",background:"transparent",border:`1px solid ${C.dim}`,color:C.muted,borderRadius:6,fontSize:12}}>Clear All</button>
+          </div>
+          {[...history].reverse().map((h,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,marginBottom:10,overflow:"hidden"}}>
+              <div onClick={()=>setExpanded(expanded===i?null:i)} style={{padding:"12px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",background:expanded===i?C.panel:C.card,transition:"background 0.12s"}}>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{fontFamily:ui,fontSize:11,fontWeight:600,color:C.blue,background:C.blue+"15",padding:"2px 8px",borderRadius:4}}>{h.module}</span>
+                  <span style={{fontFamily:ui,fontSize:12,color:C.body}}>{h.action}</span>
+                </div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <span style={{fontFamily:ui,fontSize:11,color:C.dim}}>{h.time}</span>
+                  <CopyBtn text={h.content}/>
+                  <span style={{color:C.muted,fontSize:12}}>{expanded===i?"▲":"▼"}</span>
+                </div>
+              </div>
+              {expanded===i&&(
+                <div style={{padding:"16px 18px",borderTop:`1px solid ${C.border}`}}>
+                  <div style={{fontFamily:ui,fontSize:13,color:C.white,lineHeight:1.85,whiteSpace:"pre-wrap"}}>{h.content}</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const [apiKey, setApiKey] = useState(HARDCODED_KEY !== "YOUR_API_KEY_HERE" ? HARDCODED_KEY : "");
+  const [active, setActive] = useState("home");
+  const [biz,    setBiz]    = useState({name:"",industry:"",location:"KL (General)"});
+  const [history,setHistory]= useState([]);
+  const [counts, setCounts] = useState({});
+  const [menuOpen,setMenuOpen]=useState(false);
+
+  const saveResult = useCallback((res, module) => {
+    if (!res) return;
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    setHistory(p=>[...p,{...res,module,time}]);
+  },[]);
+
+  const addLog = useCallback((mod) => {
+    setCounts(p=>({...p,[mod]:(p[mod]||0)+1}));
+  },[]);
+
+  const navigate = (id) => { setActive(id); setMenuOpen(false); };
+
+  if (!apiKey) return <SetupModal onDone={setApiKey}/>;
+
+  const commonProps = {apiKey,biz,onNav:navigate,onSave:saveResult,onLog:addLog};
+
+  const panels = {
+    home:     <Home counts={counts} history={history} onNav={navigate} biz={biz} onSetBiz={setBiz}/>,
+    content:  <ContentCreator {...commonProps}/>,
+    seo:      <SEOWriter {...commonProps}/>,
+    gbp:      <GoogleBiz {...commonProps}/>,
+    engage:   <ReplyAssistant {...commonProps}/>,
+    ads:      <AdsGen {...commonProps}/>,
+    whatsapp: <WhatsAppBlasts {...commonProps}/>,
+    festive:  <FestiveCampaigns {...commonProps}/>,
+    email:    <EmailMarketing {...commonProps}/>,
+    strategy: <StrategyEngine {...commonProps}/>,
+    history:  <SavedHistory history={history} onClear={()=>setHistory([])}/>,
+  };
+
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  const activeMod = MODS.find(m=>m.id===active);
+
+  return (
+    <div style={{display:"flex",height:"100vh",background:C.bg,overflow:"hidden"}}>
+
+      {/* ── SIDEBAR ── */}
+      <aside style={{
+        width:220, flexShrink:0,
+        background:C.card, borderRight:`1px solid ${C.border}`,
+        display:"flex", flexDirection:"column", overflowY:"auto",
+      }}>
+        {/* Logo */}
+        <div style={{padding:"22px 20px 16px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{fontFamily:ui,fontWeight:900,fontSize:22,color:C.white,letterSpacing:"-0.02em"}}>NEXUS</div>
+          <div style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.2em",marginTop:1}}>AI MARKETING AGENT</div>
+          <div style={{display:"flex",alignItems:"center",gap:7,marginTop:12}}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:C.green,boxShadow:`0 0 8px ${C.green}`,animation:"pulse 2s infinite"}}/>
+            <span style={{fontFamily:ui,fontSize:11,fontWeight:600,color:C.green}}>Online & Ready</span>
+          </div>
+          {biz.name&&(
+            <div onClick={()=>navigate("home")} style={{marginTop:12,padding:"8px 10px",background:C.panel,borderRadius:7,border:`1px solid ${C.border}`,cursor:"pointer"}}>
+              <div style={{fontFamily:ui,fontSize:12,fontWeight:700,color:C.white}}>{biz.name}</div>
+              <div style={{fontFamily:ui,fontSize:11,color:C.muted}}>{biz.industry||"—"} · {biz.location}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Nav */}
+        <nav style={{flex:1,padding:"8px 0"}}>
+          {MODS.map(m=>{
+            const on=active===m.id;
+            const cnt=counts[m.id]||0;
+            return (
+              <div key={m.id} onClick={()=>navigate(m.id)} style={{
+                padding:"10px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,
+                borderLeft:`2px solid ${on?m.color:"transparent"}`,
+                background:on?m.color+"14":"transparent",
+                transition:"all 0.1s",
+              }}
+              onMouseEnter={e=>{if(!on)e.currentTarget.style.background=C.panel;}}
+              onMouseLeave={e=>{if(!on)e.currentTarget.style.background="transparent";}}>
+                <span style={{fontSize:13,color:on?m.color:C.dim,flexShrink:0}}>{m.icon}</span>
+                <span style={{fontFamily:ui,fontSize:12,fontWeight:on?700:400,color:on?m.color:C.body}}>{m.label}</span>
+                {cnt>0&&(
+                  <span style={{marginLeft:"auto",fontFamily:mono,fontSize:9,color:m.color,background:m.color+"20",padding:"1px 6px",borderRadius:3}}>{cnt}</span>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div style={{padding:"16px 20px",borderTop:`1px solid ${C.border}`}}>
+          <div style={{fontFamily:ui,fontSize:11,color:C.dim,lineHeight:2.1}}>
+            <div style={{color:C.body,fontWeight:600}}>{total} generation{total!==1?"s":""} today</div>
+            <div style={{color:C.green}}>✓ Platform-safe</div>
+            <div style={{color:C.green}}>✓ KL-optimized</div>
+            <div style={{color:C.green}}>✓ English & BM</div>
+          </div>
+          <button onClick={()=>setApiKey("")} style={{marginTop:10,padding:"5px 12px",background:"transparent",border:`1px solid ${C.dim}`,color:C.muted,borderRadius:5,fontFamily:ui,fontSize:11,width:"100%"}}>
+            Change API Key
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN ── */}
+      <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* Topbar */}
+        <div style={{padding:"11px 28px",background:C.card,borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontFamily:ui,fontSize:12,color:C.muted}}>NEXUS</span>
+            <span style={{color:C.dim}}>/</span>
+            <span style={{fontFamily:ui,fontSize:12,fontWeight:700,color:activeMod?.color||C.white}}>{activeMod?.label}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            {history.length>0&&(
+              <span onClick={()=>navigate("history")} style={{fontFamily:ui,fontSize:12,color:C.purple,cursor:"pointer",fontWeight:600}}>
+                {history.length} saved
+              </span>
+            )}
+            <span style={{fontFamily:ui,fontSize:11,color:C.dim}}>AI Output: Action · Content · Reason · Expected Result</span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{flex:1,overflowY:"auto",padding:"30px 36px"}}>
+          <div style={{maxWidth:880}}>
+            {panels[active]}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
