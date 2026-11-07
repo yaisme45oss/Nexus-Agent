@@ -14,7 +14,7 @@ Promo video + promotion plan for **KabinKu Cabin & Container** (https://www.kabi
 
 All on-screen text sits inside the Reels/TikTok safe area, and every message is readable with the sound off.
 
-**Watermark:** the Vyntra badge (from vyntra.site) sits top-right on both cuts at 124px with a soft shadow, 30px from the edges on 9:16 and nudged up on 4:5 to clear the photo cards. It is added at encode time (`motion/assets/vyntra_watermark.png`, see `npm run encode` / `npm run feed`), so the HTML timeline stays clean.
+**Watermark:** the Vyntra badge (from vyntra.site) sits in the centre of the frame on both cuts at 260px and 18% opacity, so it is visible but everything behind it stays readable. It is added at encode time (`motion/assets/vyntra_watermark.png`, see `npm run encode` / `npm run feed`), so the HTML timeline stays clean.
 
 ## The cut (27s, 120 BPM, cuts on the beat)
 
