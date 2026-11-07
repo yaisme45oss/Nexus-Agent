@@ -1,0 +1,19 @@
+{
+  "name": "kabinku-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frame-accurate motion-graphics source for the KabinKu 27s promo reel (HTML timeline rendered with Playwright, encoded with ffmpeg).",
+  "scripts": {
+    "build": "python3 build.py",
+    "frames": "mkdir -p frames && node render.js 0 810 frames",
+    "music": "python3 music.py music_raw.wav && ffmpeg -y -i music_raw.wav -af loudnorm=I=-14:TP=-1.5:LRA=9 -ar 48000 music.wav",
+    "encode": "ffmpeg -y -framerate 30 -i frames/%05d.jpg -i music.wav -map 0:v -map 1:a -c:v libx264 -preset slow -crf 22 -maxrate 6M -bufsize 12M -pix_fmt yuv420p -profile:v high -c:a aac -b:a 192k -movflags +faststart -shortest ../deliverables/KabinKu_Reel_9x16.mp4",
+    "feed": "ffmpeg -y -i ../deliverables/KabinKu_Reel_9x16.mp4 -vf crop=1080:1350:0:260 -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -c:a copy -movflags +faststart ../deliverables/KabinKu_Feed_4x5.mp4"
+  },
+  "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/oswald": "^5.3.0",
+    "lucide-static": "^1.70.0",
+    "playwright": "^1.50.0"
+  }
+}

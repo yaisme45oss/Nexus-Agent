@@ -1,0 +1,15 @@
+import re,sys
+src=open('index.src.html').read()
+def icon(m):
+    name=m.group(1)
+    svg=open(f'node_modules/lucide-static/icons/{name}.svg').read()
+    svg=re.sub(r'<!--.*?-->','',svg,flags=re.S).strip()
+    svg=re.sub(r'\s(width|height)="24"','',svg)
+    svg=re.sub(r'class="[^"]*"','',svg)
+    return re.sub(r'\s+',' ',svg)
+out=re.sub(r'\{\{icon:([a-z0-9-]+)\}\}',icon,src)
+wa=open('assets/whatsapp.svg').read()
+wa=re.sub(r'<title>.*?</title>','',wa)
+out=out.replace('{{wa}}',wa)
+open('index.html','w').write(out)
+print('built',len(out))

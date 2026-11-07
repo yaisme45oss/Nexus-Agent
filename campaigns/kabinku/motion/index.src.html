@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<title>KabinKu Reel</title>
+<style>
+@font-face{font-family:Oswald;font-weight:500;src:url(node_modules/@fontsource/oswald/files/oswald-latin-500-normal.woff2)}
+@font-face{font-family:Oswald;font-weight:600;src:url(node_modules/@fontsource/oswald/files/oswald-latin-600-normal.woff2)}
+@font-face{font-family:Oswald;font-weight:700;src:url(node_modules/@fontsource/oswald/files/oswald-latin-700-normal.woff2)}
+@font-face{font-family:Barlow;font-weight:500;src:url(node_modules/@fontsource/barlow/files/barlow-latin-500-normal.woff2)}
+@font-face{font-family:Barlow;font-weight:600;src:url(node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2)}
+@font-face{font-family:Barlow;font-weight:700;src:url(node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2)}
+@font-face{font-family:Barlow;font-weight:800;src:url(node_modules/@fontsource/barlow/files/barlow-latin-800-normal.woff2)}
+:root{--deep:#17231A;--brand:#2E422E;--g2:#3F7652;--cream:#FFFBF0;--amber:#F4B63F;--wa:#25D366}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--deep);font-family:Barlow,sans-serif;color:var(--cream)}
+.abs{position:absolute}
+.scene{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:540px 960px}
+.mask{overflow:hidden;display:block}
+.in{display:block;will-change:transform}
+.ttl{font-family:Oswald;font-weight:700;line-height:1.08;text-transform:uppercase;letter-spacing:1px}
+.kick{font:700 50px/1.3 Barlow;letter-spacing:14px;color:var(--amber);text-transform:uppercase}
+svg{display:block}
+#bg{position:absolute;inset:-100px;background:
+  radial-gradient(ellipse at 50% 38%, rgba(63,118,82,.55) 0%, rgba(46,66,46,.35) 35%, rgba(23,35,26,0) 75%),
+  linear-gradient(180deg,#22331F 0%,#17231A 100%)}
+#grid{position:absolute;inset:-180px;background-image:
+  linear-gradient(rgba(255,251,240,.055) 2px,transparent 2px),
+  linear-gradient(90deg,rgba(255,251,240,.055) 2px,transparent 2px);
+  background-size:90px 90px}
+#cam{position:absolute;inset:0;transform-origin:540px 960px}
+#fx{position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none}
+#flash{position:absolute;inset:0;background:#fffbf0;opacity:0;pointer-events:none}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.42) 100%)}
+#grain{position:absolute;left:0;top:0;width:1080px;height:1920px;opacity:.07;mix-blend-mode:overlay;pointer-events:none}
+#bug{position:absolute;left:46px;top:46px;width:118px;height:118px}
+#bug img{position:absolute;inset:0;width:100%;height:100%}
+
+/* S1 */
+.pcard{position:absolute;left:200px;top:690px;width:680px;height:800px;border:12px solid var(--cream);border-radius:30px;overflow:hidden;box-shadow:0 34px 70px rgba(0,0,0,.5);transform-origin:50% 60%}
+.pcard img{width:100%;height:100%;object-fit:cover}
+.word{position:absolute;left:0;top:0;width:1080px;height:210px;display:flex;align-items:center;justify-content:center}
+.word span{font:700 150px/1 Oswald;background:var(--amber);color:var(--deep);padding:14px 36px 20px;border-radius:22px;text-transform:uppercase;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+#s1cab{position:absolute;left:140px;top:610px;width:800px;transform-origin:50% 100%;filter:drop-shadow(0 30px 40px rgba(0,0,0,.45))}
+#s1shadow{position:absolute;left:150px;top:1262px;width:780px;height:120px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 70%)}
+
+/* S2 */
+.row{position:absolute;left:0;width:920px;height:126px;display:flex;align-items:center;gap:30px}
+.ic{width:104px;height:104px;border-radius:50%;background:var(--amber);color:var(--deep);flex:none;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px rgba(0,0,0,.35)}
+.ic svg{width:54px;height:54px;stroke-width:2.4}
+.rt{font:600 60px/1.05 Oswald;text-transform:uppercase}
+.rd{font:500 34px/1.3 Barlow;color:rgba(255,251,240,.82)}
+.uline{height:5px;background:var(--amber);width:120px;margin:8px 0 6px;transform-origin:0 50%}
+
+/* S3 */
+#s3deck{position:absolute;left:90px;top:400px;width:900px;height:900px;border-radius:38px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.5)}
+.ucard{position:absolute;inset:0;overflow:hidden;background:#111}
+.ucard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:50% 50%}
+.ucard .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 60%,rgba(0,0,0,.45) 100%)}
+.cnt{position:absolute;right:28px;top:28px;font:600 34px/1 Oswald;letter-spacing:3px;background:rgba(23,35,26,.78);padding:12px 20px 14px;border-radius:14px}
+#s3slab{position:absolute;top:-20px;width:84px;height:940px;background:var(--amber);transform-origin:50% 50%}
+.lab{position:absolute;left:0;top:0;font:700 150px/1 Oswald;text-transform:uppercase;white-space:nowrap}
+.lab b{color:var(--amber);font-weight:700}
+
+/* S4 */
+.prow{position:absolute;left:0;width:1080px;height:200px}
+.circ{position:absolute;left:122px;top:52px;width:96px;height:96px;border-radius:50%;background:var(--cream);color:var(--deep);display:flex;align-items:center;justify-content:center;font:700 42px/1 Oswald;box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.circ .num,.circ .chk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.circ .chk svg{width:52px;height:52px;stroke-width:3.2}
+.thumb{position:absolute;left:256px;top:0;width:300px;height:200px;border-radius:22px;overflow:hidden;border:5px solid var(--cream);background:#fff}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.ptx{position:absolute;left:592px;top:42px}
+.ptx .t{font:600 54px/1.05 Oswald;text-transform:uppercase}
+.ptx .d{font:500 32px/1.3 Barlow;color:rgba(255,251,240,.8)}
+
+/* S5 */
+#s5{background:var(--cream);color:var(--brand)}
+#s5grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(46,66,46,.07) 2px,transparent 2px),
+  linear-gradient(90deg,rgba(46,66,46,.07) 2px,transparent 2px);background-size:90px 90px}
+.dimlab{position:absolute;left:0;top:0;font:600 40px/1 Oswald;background:var(--amber);color:var(--deep);padding:8px 18px 10px;border-radius:12px;white-space:nowrap;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+.chip{position:absolute;left:0;height:64px;display:flex;align-items:center;gap:16px;background:var(--brand);color:var(--cream);border-radius:32px;padding:0 30px 0 14px;font:700 36px/1 Barlow;white-space:nowrap;box-shadow:0 10px 22px rgba(23,35,26,.25)}
+.chip .ci{width:44px;height:44px;border-radius:50%;background:var(--amber);color:var(--deep);display:flex;align-items:center;justify-content:center}
+.chip .ci svg{width:26px;height:26px;stroke-width:2.6}
+
+/* S6 */
+.col{position:absolute;top:0;width:348px;display:flex;flex-direction:column;gap:18px}
+.tile{width:348px;border-radius:18px;overflow:hidden;flex:none}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.digit{position:absolute;top:0;width:150px;height:300px;overflow:hidden}
+.strip{position:absolute;left:0;top:0;width:150px}
+.strip div{height:300px;font:700 300px/300px Oswald;text-align:center}
+.badge{font:600 42px/1 Oswald;border:4px solid var(--cream);border-radius:16px;padding:12px 22px 14px;letter-spacing:2px;white-space:nowrap}
+.tape{position:absolute;left:-200px;width:1480px;height:100px;overflow:hidden;display:flex;align-items:center;box-shadow:0 14px 30px rgba(0,0,0,.4)}
+.tape .tx{white-space:nowrap;font:600 54px/1 Oswald;letter-spacing:2px;text-transform:uppercase;will-change:transform}
+
+/* S7 */
+#s7logo{position:absolute;left:340px;top:250px;width:400px;height:400px}
+#wa{position:absolute;left:110px;top:1100px;width:860px;height:150px;border-radius:75px;background:var(--wa);display:flex;align-items:center;justify-content:center;gap:28px;color:#fff;box-shadow:0 24px 50px rgba(0,0,0,.45);overflow:hidden}
+#wa svg{width:78px;height:78px;fill:#fff}
+#wa .n{font:700 84px/1 Oswald;letter-spacing:2px}
+#wa .shine{position:absolute;top:-40px;left:0;width:120px;height:240px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.55),rgba(255,255,255,0));transform:skewX(-20deg)}
+.ring{position:absolute;left:110px;top:1100px;width:860px;height:150px;border-radius:75px;border:5px solid var(--wa);opacity:0}
+.foot{display:flex;align-items:center;gap:14px;font:600 40px/1 Barlow;color:rgba(255,251,240,.9)}
+.foot svg{width:40px;height:40px;stroke-width:2.4;color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="grid"></div>
+  <div id="cam">
+
+    <!-- ===================== S1 HOOK ===================== -->
+    <div class="scene" id="s1">
+      <div id="s1a" class="abs" style="left:0;top:0;width:1080px;height:1920px;transform-origin:540px 700px">
+        <div id="s1cards">
+          <div class="pcard"><img src="assets/p25.jpg"></div>
+          <div class="pcard"><img src="assets/p47.jpg"></div>
+          <div class="pcard"><img src="assets/p40.jpg"></div>
+          <div class="pcard"><img src="assets/p52.jpg"></div>
+        </div>
+        <div class="abs mask" id="s1k" style="top:290px;left:0;width:1080px;height:150px;text-align:center">
+          <div class="in ttl" style="font-size:124px;font-weight:600;letter-spacing:8px">NAK BINA</div>
+        </div>
+        <div class="abs" id="s1roll" style="top:450px;left:0;width:1080px;height:210px;overflow:hidden">
+          <div class="word"><span>HOMESTAY?</span></div>
+          <div class="word"><span>PEJABAT?</span></div>
+          <div class="word"><span>SEKOLAH?</span></div>
+          <div class="word"><span>PERNIAGAAN?</span></div>
+        </div>
+      </div>
+      <div id="s1b" class="abs" style="left:0;top:0;width:1080px;height:1920px">
+        <div class="abs mask" id="s1k2" style="top:400px;left:0;width:1080px;height:70px;text-align:center"><div class="in kick" style="letter-spacing:18px">BINA SECARA</div></div>
+        <div class="abs ttl" id="s1big" style="top:470px;left:0;width:1080px;text-align:center;font-size:232px;line-height:1;letter-spacing:4px;transform-origin:540px 600px">MODULAR</div>
+        <div id="s1shadow"></div>
+        <img id="s1cab" src="assets/c_green.png">
+        <div class="abs" id="s1sub" style="top:1385px;left:0;width:1080px;text-align:center;font:600 54px/1.25 Barlow">
+          <div class="mask"><div class="in" id="s1sub1">Siap lebih pantas.</div></div>
+          <div class="mask"><div class="in" id="s1sub2" style="color:var(--amber);font-weight:700">Kos lebih terkawal.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== S2 WHY ===================== -->
+    <div class="scene" id="s2">
+      <div class="abs" id="s2photo" style="left:0;top:0;width:1080px;height:1110px;overflow:hidden;clip-path:polygon(0 0,100% 0,100% 90%,0 100%)">
+        <img id="s2img" src="assets/p29.jpg" style="width:100%;height:100%;object-fit:cover;transform-origin:55% 45%">
+        <div class="abs" style="inset:0;background:linear-gradient(180deg,rgba(23,35,26,.25) 0%,rgba(23,35,26,0) 25%,rgba(23,35,26,0) 45%,rgba(23,35,26,.92) 100%)"></div>
+      </div>
+      <div class="abs" style="left:80px;top:770px">
+        <div class="mask"><div class="in kick" id="s2k">KENAPA PILIH</div></div>
+        <div class="mask"><div class="in ttl" id="s2t" style="font-size:156px;line-height:1.02">KABINKU?</div></div>
+      </div>
+      <div class="abs" id="s2rows" style="left:80px;top:1130px">
+        <div class="row" style="top:0"><div class="ic">{{icon:wallet}}</div><div><div class="rt">Kos lebih terkawal</div><div class="rd">Bajet jelas dari awal</div></div></div>
+        <div class="row" style="top:140px"><div class="ic">{{icon:clock}}</div><div><div class="rt">Siap lebih pantas</div><div class="rd">Difabrikasi awal, pasang cepat</div></div></div>
+        <div class="row" style="top:280px"><div class="ic">{{icon:shield-check}}</div><div><div class="rt">Kualiti dijamin</div><div class="rd">Rangka keluli &amp; panel sandwich</div></div></div>
+      </div>
+    </div>
+
+    <!-- ===================== S3 USES ===================== -->
+    <div class="scene" id="s3">
+      <div class="abs mask" style="top:300px;left:90px;height:70px"><div class="in kick" id="s3k">SESUAI UNTUK</div></div>
+      <div id="s3deck">
+        <div class="ucard"><img src="assets/p33.jpg"><div class="shade"></div><div class="cnt">01 / 04</div></div>
+        <div class="ucard"><img src="assets/p07.jpg"><div class="shade"></div><div class="cnt">02 / 04</div></div>
+        <div class="ucard"><img src="assets/p57.jpg"><div class="shade"></div><div class="cnt">03 / 04</div></div>
+        <div class="ucard"><img src="assets/p35.jpg"><div class="shade"></div><div class="cnt">04 / 04</div></div>
+        <div id="s3slab"></div>
+      </div>
+      <div class="abs" id="s3labels" style="left:90px;top:1325px;width:900px;height:170px;overflow:hidden">
+        <div class="lab">Homestay<b>.</b></div>
+        <div class="lab">Pejabat<b>.</b></div>
+        <div class="lab">Asrama<b>.</b></div>
+        <div class="lab">Industri<b>.</b></div>
+      </div>
+    </div>
+
+    <!-- ===================== S4 PROCESS ===================== -->
+    <div class="scene" id="s4">
+      <div class="abs" style="left:80px;top:285px">
+        <div class="mask"><div class="in ttl" id="s4t1" style="font-size:96px">Dari reka bentuk</div></div>
+        <div class="mask"><div class="in ttl" id="s4t2" style="font-size:96px;color:var(--amber)">hingga pemasangan</div></div>
+      </div>
+      <div class="abs" style="left:168px;top:650px;width:5px;height:720px;background:rgba(255,251,240,.18);border-radius:3px"></div>
+      <div class="abs" id="s4line" style="left:168px;top:650px;width:5px;height:720px;background:var(--amber);border-radius:3px;transform-origin:50% 0"></div>
+      <div id="s4rows">
+        <div class="prow" style="top:550px"><div class="thumb"><img src="assets/p14.jpg" style="object-fit:contain;padding:6px"></div><div class="circ"><div class="num">01</div><div class="chk">{{icon:check}}</div></div><div class="ptx"><div class="t">Reka bentuk</div><div class="d">Ikut keperluan anda</div></div></div>
+        <div class="prow" style="top:790px"><div class="thumb"><img src="assets/p17.jpg" style="object-position:50% 70%"></div><div class="circ"><div class="num">02</div><div class="chk">{{icon:check}}</div></div><div class="ptx"><div class="t">Fabrikasi</div><div class="d">Kualiti terkawal di kilang</div></div></div>
+        <div class="prow" style="top:1030px"><div class="thumb"><img src="assets/p34.jpg" style="object-position:50% 35%"></div><div class="circ"><div class="num">03</div><div class="chk">{{icon:check}}</div></div><div class="ptx"><div class="t">Penghantaran</div><div class="d">Terus ke tapak anda</div></div></div>
+        <div class="prow" style="top:1270px"><div class="thumb"><img src="assets/p61.jpg"></div><div class="circ"><div class="num">04</div><div class="chk">{{icon:check}}</div></div><div class="ptx"><div class="t">Pemasangan</div><div class="d">Pantas &amp; kemas</div></div></div>
+      </div>
+      <div class="abs mask" style="left:80px;top:1505px;height:60px"><div class="in" id="s4f" style="font:600 42px/1.3 Barlow;color:rgba(255,251,240,.88)">Pengurusan projek <span style="color:var(--amber)">jelas &amp; telus.</span></div></div>
+    </div>
+
+    <!-- ===================== S5 SPEC ===================== -->
+    <div class="scene" id="s5">
+      <div id="s5grid"></div>
+      <div class="abs" style="left:80px;top:285px">
+        <div class="mask"><div class="in kick" id="s5k" style="color:var(--g2)">DIBINA UNTUK</div></div>
+        <div class="mask"><div class="in ttl" id="s5t" style="font-size:150px;color:var(--brand);line-height:1.02">Tahan lama</div></div>
+      </div>
+      <div class="abs" id="s5cab" style="left:70px;top:590px;width:760px;height:690px;transform-origin:50% 100%">
+        <div class="abs" id="s5shadow" style="left:20px;top:600px;width:760px;height:130px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(23,35,26,.35) 0%,rgba(23,35,26,0) 70%)"></div>
+        <img src="assets/c_green.png" style="position:absolute;left:0;top:0;width:760px">
+        <svg class="abs" width="900" height="820" viewBox="0 0 900 820" style="left:0;top:0;overflow:visible">
+          <g fill="none" stroke="#2E422E" stroke-width="4" stroke-linecap="round">
+            <path id="dm1" d=""/>
+            <path id="dm2" d=""/>
+            <path id="dm3" d=""/>
+          </g>
+        </svg>
+        <div class="dimlab" id="dl1">0 mm</div>
+        <div class="dimlab" id="dl2">0 mm</div>
+        <div class="dimlab" id="dl3">0 mm</div>
+      </div>
+      <div class="abs" id="s5chips" style="left:80px;top:1340px">
+        <div class="chip" style="top:0"><div class="ci">{{icon:building-2}}</div>Rangka keluli tahan lasak</div>
+        <div class="chip" style="top:76px"><div class="ci">{{icon:layers}}</div>Dinding panel sandwich 50mm</div>
+        <div class="chip" style="top:152px"><div class="ci">{{icon:shield-check}}</div>Salutan galvanized &amp; powder coat</div>
+      </div>
+    </div>
+
+    <!-- ===================== S6 TRUST ===================== -->
+    <div class="scene" id="s6">
+      <div id="s6wall" class="abs" style="inset:0">
+        <div class="col" id="col0" style="left:0">
+          <div class="tile" style="height:420px"><img src="assets/p26.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p31.jpg"></div>
+          <div class="tile" style="height:460px"><img src="assets/p55.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p44.jpg"></div>
+          <div class="tile" style="height:420px"><img src="assets/p45.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p39.jpg"></div>
+          <div class="tile" style="height:420px"><img src="assets/p15.jpg"></div>
+        </div>
+        <div class="col" id="col1" style="left:366px">
+          <div class="tile" style="height:330px"><img src="assets/p30.jpg"></div>
+          <div class="tile" style="height:440px"><img src="assets/p56.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p49.jpg"></div>
+          <div class="tile" style="height:460px"><img src="assets/p60.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p41.jpg"></div>
+          <div class="tile" style="height:420px"><img src="assets/p23.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p46.jpg"></div>
+        </div>
+        <div class="col" id="col2" style="left:732px">
+          <div class="tile" style="height:440px"><img src="assets/p59.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p32.jpg"></div>
+          <div class="tile" style="height:420px"><img src="assets/p36.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p50.jpg"></div>
+          <div class="tile" style="height:460px"><img src="assets/p53.jpg"></div>
+          <div class="tile" style="height:330px"><img src="assets/p51.jpg"></div>
+          <div class="tile" style="height:420px"><img src="assets/p24.jpg"></div>
+        </div>
+        <div class="abs" style="inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(23,35,26,.9) 0%,rgba(23,35,26,.8) 45%,rgba(23,35,26,.62) 100%)"></div>
+      </div>
+      <div id="s6fg" class="abs" style="inset:0;transform-origin:540px 800px">
+        <div class="abs mask" style="top:440px;left:0;width:1080px;height:70px;text-align:center"><div class="in kick" id="s6k" style="letter-spacing:22px">SEJAK</div></div>
+        <div class="abs" id="s6year" style="top:520px;left:240px;width:600px;height:300px">
+          <div class="digit" style="left:0"><div class="strip"></div></div>
+          <div class="digit" style="left:150px"><div class="strip"></div></div>
+          <div class="digit" style="left:300px"><div class="strip"></div></div>
+          <div class="digit" style="left:450px"><div class="strip"></div></div>
+        </div>
+        <div class="abs mask" style="top:850px;left:0;width:1080px;height:66px;text-align:center"><div class="in" id="s6l" style="font:600 46px/1.3 Barlow">Projek dari <b style="color:var(--amber)">Johor</b> hingga <b style="color:var(--amber)">Kelantan</b></div></div>
+        <div class="abs" id="s6badges" style="top:960px;left:0;width:1080px;display:flex;justify-content:center;gap:18px">
+          <div class="badge">CIDB G3</div><div class="badge">MOF BUMIPUTERA</div><div class="badge">TNB</div>
+        </div>
+        <div class="tape" id="tapeB" style="top:1215px;background:var(--cream);color:var(--brand)"><div class="tx">Homestay ✦ Pejabat ✦ Sekolah ✦ Kafe ✦ Surau ✦ Asrama ✦ Stor ✦ Homestay ✦ Pejabat ✦ Sekolah ✦ Kafe ✦ Surau ✦ Asrama ✦ Stor ✦ Homestay ✦ Pejabat ✦ Sekolah ✦ Kafe ✦ Surau ✦ Asrama ✦ Stor ✦ </div></div>
+        <div class="tape" id="tapeA" style="top:1215px;background:var(--amber);color:var(--deep)"><div class="tx">Temerloh ✦ Johor Bahru ✦ Batang Kali ✦ Cameron Highlands ✦ Lumut ✦ Rantau Panjang ✦ Temerloh ✦ Johor Bahru ✦ Batang Kali ✦ Cameron Highlands ✦ Lumut ✦ Rantau Panjang ✦ Temerloh ✦ Johor Bahru ✦ Batang Kali ✦ Cameron Highlands ✦ Lumut ✦ Rantau Panjang ✦ </div></div>
+      </div>
+    </div>
+
+    <!-- ===================== S7 CTA ===================== -->
+    <div class="scene" id="s7">
+      <img id="s7logo" src="assets/logo.png">
+      <div class="abs" style="top:705px;left:0;width:1080px;text-align:center">
+        <div class="mask"><div class="in ttl" id="s7h1" style="font-size:104px">Minta sebut harga</div></div>
+        <div class="mask"><div class="in ttl" id="s7h2" style="font-size:104px;color:var(--amber)">terperinci</div></div>
+      </div>
+      <div class="abs mask" style="top:965px;left:0;width:1080px;height:70px;text-align:center"><div class="in" id="s7s" style="font:500 44px/1.4 Barlow;color:rgba(255,251,240,.88)">Bandingkan dengan yang lain.</div></div>
+      <div class="ring" id="ring1"></div><div class="ring" id="ring2"></div>
+      <div id="wa">{{wa}}<div class="n">013-337 9262</div><div class="shine" id="shine"></div></div>
+      <div class="abs mask" style="top:1280px;left:0;width:1080px;height:64px;text-align:center"><div class="in" id="s7n2" style="font:600 46px/1.3 Barlow">atau <b style="font-family:Oswald;font-weight:600;letter-spacing:1px">012-406 6648</b></div></div>
+      <div class="abs" id="s7f" style="top:1378px;left:0;width:1080px;display:flex;flex-direction:column;align-items:center;gap:20px">
+        <div class="foot">{{icon:globe}}kabinku.com.my</div>
+        <div class="foot">{{icon:map-pin}}Showroom: Klang, Selangor</div>
+      </div>
+    </div>
+
+    <canvas id="fx" width="1080" height="1920"></canvas>
+  </div>
+  <div id="bug"><img id="bugW" src="assets/logo.png"><img id="bugG" src="assets/logo_green.png" style="opacity:0"></div>
+  <div id="flash"></div>
+  <div id="vig"></div>
+  <canvas id="grain" width="540" height="960"></canvas>
+</div>
+
+<script>
+// ---------- helpers ----------
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const L=(a,b,p)=>a+(b-a)*p;
+const E={
+  lin:x=>x,
+  outCubic:x=>1-Math.pow(1-x,3),
+  inCubic:x=>x*x*x,
+  inOutCubic:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
+  outQuint:x=>1-Math.pow(1-x,5),
+  outExpo:x=>x>=1?1:1-Math.pow(2,-10*x),
+  inExpo:x=>x<=0?0:Math.pow(2,10*x-10),
+  inOutExpo:x=>x<=0?0:x>=1?1:x<.5?Math.pow(2,20*x-10)/2:(2-Math.pow(2,-20*x+10))/2,
+  outBack:x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)},
+  outBackS:x=>{const c1=1.2,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)},
+};
+const P=(t,s,d,e=E.outCubic)=>e(clamp((t-s)/d));
+const $=id=>document.getElementById(id);
+function tf(el,o){
+  const x=o.x||0,y=o.y||0,s=o.s??1,sx=(o.sx??1)*s,sy=(o.sy??1)*s,r=o.r||0,sk=o.sk||0;
+  el.style.transform=`translate(${x.toFixed(2)}px,${y.toFixed(2)}px) rotate(${r.toFixed(3)}deg) skewX(${sk}deg) scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
+  if(o.o!==undefined) el.style.opacity=clamp(o.o).toFixed(3);
+  if(o.b!==undefined) el.style.filter=o.b>0.05?`blur(${o.b.toFixed(2)}px)`:'none';
+}
+function vis(el,on){el.style.display=on?'block':'none'}
+// mask reveal (inner slides up from below), optional exit
+function rev(el,t,s,d=.5,exitAt=null,ed=.3){
+  let p=P(t,s,d,E.outExpo); let y=(1-p)*110;
+  if(exitAt!==null){const q=P(t,exitAt,ed,E.inCubic); y-=q*110;}
+  el.style.transform=`translateY(${y.toFixed(2)}%)`;
+}
+// seeded rng
+function rng(seed){let s=seed>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+
+// ---------- setup ----------
+const scenes={s1:[0,3.75],s2:[3.3,7.65],s3:[7.25,12.15],s4:[11.85,16.5],s5:[15.95,19.75],s6:[19.45,23.15],s7:[22.85,99]};
+const cards1=[...document.querySelectorAll('#s1cards .pcard')];
+const words=[...document.querySelectorAll('#s1roll .word')];
+const WT=[0.42,0.80,1.18,1.56];
+const CR=[-6,5,-4,6], CX=[-24,30,-16,22], CY=[0,-14,8,-6];
+const ucards=[...document.querySelectorAll('.ucard')];
+const ulabs=[...document.querySelectorAll('.lab')];
+const UT=[7.5,8.5,9.5,10.5];
+const prows=[...document.querySelectorAll('.prow')];
+const PT=[12.4,12.9,13.4,13.9];
+const rows2=[...document.querySelectorAll('#s2rows .row')];
+const chips=[...document.querySelectorAll('.chip')];
+const badges=[...document.querySelectorAll('.badge')];
+
+// S5 dimension geometry (cabin local coords, scaled to 760px wide)
+const K=760/766;
+const poly=[[3,97],[439,10],[482,2],[761,188],[763,517],[474,692],[7,595]].map(([x,y])=>[x*K,y*K]);
+function offLine(a,b,off){const dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);const nx=dy/l,ny=-dx/l;return{a:[a[0]+nx*off,a[1]+ny*off],b:[b[0]+nx*off,b[1]+ny*off],n:[nx,ny],ang:Math.atan2(dy,dx)*180/Math.PI,len:l}}
+const dims=[
+  // height: along right far post, offset to the right
+  {a:[poly[3][0]+44,poly[3][1]],b:[poly[4][0]+44,poly[4][1]],n:[1,0],ang:0,val:2800,lab:$('dl1'),path:$('dm1'),t:16.75},
+  Object.assign(offLine(poly[4],poly[5],44),{val:5950,lab:$('dl2'),path:$('dm2'),t:17.0}),
+  Object.assign(offLine(poly[5],poly[6],44),{val:3000,lab:$('dl3'),path:$('dm3'),t:17.25}),
+];
+dims.forEach(d=>{
+  const tick=16,[nx,ny]=d.n;
+  const ln=Math.hypot(d.b[0]-d.a[0],d.b[1]-d.a[1]);
+  d.len=ln;
+  d.path.setAttribute('d',`M${d.a[0]} ${d.a[1]} L${d.b[0]} ${d.b[1]} M${d.a[0]-nx*tick} ${d.a[1]-ny*tick} L${d.a[0]+nx*tick} ${d.a[1]+ny*tick} M${d.b[0]-nx*tick} ${d.b[1]-ny*tick} L${d.b[0]+nx*tick} ${d.b[1]+ny*tick}`);
+  const total=ln+4*tick+10; d.total=total;
+  d.path.style.strokeDasharray=total; d.mid=[(d.a[0]+d.b[0])/2,(d.a[1]+d.b[1])/2];
+  let ang=d.ang; if(ang>90)ang-=180; if(ang<-90)ang+=180; d.labAng=(d===dims[0])?0:ang;
+});
+
+// S6 digit strips
+const YEAR='2015';
+document.querySelectorAll('#s6year .strip').forEach((st,i)=>{
+  const target=+YEAR[i]; const n=10+i*3; let h='';
+  for(let k=0;k<n;k++){h+=`<div>${(target+1+k)%10}</div>`} h+=`<div>${target}</div>`;
+  st.innerHTML=h; st.dataset.n=n;
+});
+const strips=[...document.querySelectorAll('#s6year .strip')];
+
+// particles
+const fx=$('fx').getContext('2d');
+function mkBurst(seed,n,cx,cy,spreadX,opts){
+  const r=rng(seed),arr=[];
+  for(let i=0;i<n;i++){
+    const side=r()<.5?-1:1;
+    arr.push({x:cx+(r()-.5)*spreadX,y:cy+(r()-.5)*20,vx:side*(200+r()*900)*(opts.hx||1),vy:-(80+r()*520)*(opts.vy||1),
+      s:4+r()*16,life:.6+r()*.9,c:opts.colors[Math.floor(r()*opts.colors.length)],g:opts.g??900,rot:r()*6});
+  }
+  return arr;
+}
+const bursts=[
+  {t0:2.05,ps:mkBurst(11,140,540,1325,700,{colors:['#d9d2bf','#bfb8a4','#fffbf0','#a49d8a'],g:700})},
+  {t0:24.15,ps:mkBurst(23,70,540,1175,820,{colors:['#F4B63F','#25D366','#FFFBF0'],g:1200,vy:1.6,hx:.8})},
+];
+function drawFx(t){
+  fx.clearRect(0,0,1080,1920);
+  for(const b of bursts){
+    const dt=t-b.t0; if(dt<0||dt>1.8)continue;
+    for(const p of b.ps){
+      if(dt>p.life)continue;
+      const drag=Math.exp(-2.2*dt);
+      const x=p.x+p.vx*(1-drag)/2.2, y=p.y+p.vy*(1-drag)/2.2+.5*p.g*dt*dt*.35;
+      const a=(1-dt/p.life);
+      fx.globalAlpha=a*.85; fx.fillStyle=p.c;
+      fx.beginPath(); fx.arc(x,y,p.s*(0.6+0.4*a),0,Math.PI*2); fx.fill();
+    }
+  }
+  fx.globalAlpha=1;
+}
+// grain frames
+const gctx=$('grain').getContext('2d'); const gFrames=[];
+(function(){const r=rng(99);for(let f=0;f<6;f++){const im=gctx.createImageData(540,960);for(let i=0;i<im.data.length;i+=4){const v=r()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}gFrames.push(im)}})();
+
+// marquee widths
+let tapeW={};
+function measure(){
+  for(const id of ['tapeA','tapeB']){const tx=$(id).querySelector('.tx');tapeW[id]=tx.scrollWidth/3;}
+}
+
+// ---------- render ----------
+function renderFrame(t){
+  // scenes visibility
+  for(const [id,[a,b]] of Object.entries(scenes)) vis($(id),t>=a&&t<b);
+
+  // background grid drift
+  $('grid').style.transform=`translate(${(-(t*14)%90).toFixed(2)}px,${(-(t*22)%90).toFixed(2)}px)`;
+  $('bg').style.opacity=1;
+
+  // camera shake
+  let amp=0;
+  if(t>2.05) amp+=26*Math.exp(-9*(t-2.05));
+  if(t>23.0) amp+=18*Math.exp(-10*(t-23.0));
+  const sx=amp*Math.sin(t*97.3)+amp*.5*Math.sin(t*41.1), sy=amp*Math.cos(t*83.7)+amp*.5*Math.cos(t*53.9);
+  $('cam').style.transform=`translate(${sx.toFixed(2)}px,${sy.toFixed(2)}px) rotate(${(amp*.03*Math.sin(t*61)).toFixed(3)}deg)`;
+
+  // flash
+  let fl=0;
+  if(t>=1.98) fl=Math.max(fl,.75*(1-P(t,2.0,.32,E.outCubic)));
+  if(t>=22.98) fl=Math.max(fl,.8*(1-P(t,23.0,.35,E.outCubic)));
+  $('flash').style.opacity=t<1.98&&t<22.98?0:fl.toFixed(3);
+
+  // ===== S1 =====
+  if(t<3.8){
+    rev($('s1k').firstElementChild,t,0.04,.45);
+    words.forEach((w,i)=>{
+      const pin=P(t,WT[i],.16,E.outCubic);
+      const pout=i<3?P(t,WT[i+1],.14,E.inCubic):0;
+      tf(w,{y:(1-pin)*215-pout*215,o:t>=WT[i]?1:0});
+    });
+    cards1.forEach((c,i)=>{
+      const p=P(t,WT[i]-.02,.34,E.outBack);
+      const settle=P(t,WT[i],1.2,E.outCubic);
+      tf(c,{x:CX[i],y:CY[i]+(1-p)*120,r:CR[i]*(0.4+0.6*p)+ (i%2?-1:1)*2*(1-settle),s:L(.55,1,p)*(1-.02*settle*(3-i)),o:t>=WT[i]-.02?1:0});
+    });
+    // pre-drop collapse
+    const ex=P(t,1.80,.22,E.inCubic);
+    tf($('s1a'),{s:L(1,.72,ex),o:1-ex,b:ex*14});
+    // drop
+    const fall=P(t,1.80,.25,E.inCubic);
+    const land=clamp((t-2.05)/.6);
+    const sq=t>2.05?.085*Math.exp(-7*land*.6*1.66)*Math.cos(land*14):0;
+    tf($('s1cab'),{y:t<1.8?-1700:L(-1500,0,fall),sy:1-sq,sx:1+sq*.6,o:t<1.8?0:1});
+    $('s1shadow').style.opacity=(t<1.8?0:L(0,.9,fall)).toFixed(3);
+    tf($('s1shadow'),{s:L(.4,1,fall)*(1+sq*.8)});
+    const bp=P(t,2.02,.5,E.outExpo);
+    tf($('s1big'),{s:L(1.7,1,bp),o:t<2.02?0:P(t,2.02,.1,E.lin),b:(1-bp)*10});
+    rev($('s1k2').firstElementChild,t,2.2,.45);
+    rev($('s1sub1'),t,2.4,.5); rev($('s1sub2'),t,2.55,.5);
+    // exit whip up
+    const out=P(t,3.3,.38,E.inExpo);
+    tf($('s1'),{y:-out*1700,b:Math.sin(Math.PI*out)*22});
+  }
+
+  // ===== S2 =====
+  if(t>3.2&&t<7.8){
+    const ip=P(t,3.38,.5,E.outExpo);
+    const op=P(t,7.28,.4,E.inOutCubic);
+    tf($('s2'),{y:(1-ip)*1800,x:-op*1080,b:Math.sin(Math.PI*clamp((t-3.38)/.5))*18*(1-ip)+Math.sin(Math.PI*op)*16});
+    tf($('s2img'),{s:L(1.22,1.02,P(t,3.38,4.2,E.outCubic))});
+    rev($('s2k'),t,3.75,.45); rev($('s2t'),t,3.85,.5);
+    rows2.forEach((r,i)=>{
+      const s=4.0+i*.5; const p=P(t,s,.5,E.outExpo);
+      tf(r,{x:(1-p)*-160,o:P(t,s,.18,E.lin)});
+      const ic=r.querySelector('.ic'); tf(ic,{s:P(t,s,.45,E.outBack),r:(1-P(t,s,.5,E.outCubic))*-90});
+    });
+  }
+
+  // ===== S3 =====
+  if(t>7.2&&t<12.2){
+    const ip=P(t,7.28,.4,E.inOutCubic);
+    const zp=P(t,11.78,.3,E.inCubic);
+    tf($('s3'),{x:(1-ip)*1080,s:L(1,1.55,zp),o:1-zp,b:Math.sin(Math.PI*ip)*16+zp*22});
+    rev($('s3k'),t,7.45,.45);
+    let slabX=-400, slabOn=0;
+    ucards.forEach((c,i)=>{
+      const p=P(t,UT[i],.42,E.outExpo);
+      const e=L(1080,0,p);
+      c.style.clipPath=`polygon(${e}px 0,960px 0,960px 960px,${e-170}px 960px)`;
+      c.style.display=t>=UT[i]?'block':'none';
+      const img=c.querySelector('img');
+      const drift=clamp((t-UT[i])/1.6);
+      tf(img,{s:L(1.32,1.08,p)-.06*drift, x:L(60,0,p)});
+      // darken when next card arrives
+      const nx=i<3?P(t,UT[i+1],.42,E.outCubic):0;
+      c.style.filter=nx>0.01?`brightness(${(1-nx*.55).toFixed(3)})`:'none';
+      if(t>=UT[i]&&p<.999){slabX=e;slabOn=1-P(t,UT[i]+.25,.15,E.lin)}
+    });
+    const sl=$('s3slab'); sl.style.left=(slabX-85-42)+'px'; sl.style.transform='skewX(-10.2deg)'; sl.style.opacity=slabOn.toFixed(3);
+    ulabs.forEach((l,i)=>{
+      const pin=P(t,UT[i]+.04,.42,E.outExpo);
+      const pout=i<3?P(t,UT[i+1]-.06,.18,E.inCubic):0;
+      tf(l,{y:(1-pin)*175-pout*175,o:t>=UT[i]?1:0});
+    });
+  }
+
+  // ===== S4 =====
+  if(t>11.8&&t<16.6){
+    const ip=P(t,11.9,.4,E.outCubic);
+    const op=P(t,16.0,.4,E.inCubic);
+    tf($('s4'),{s:L(.84,1,ip),o:ip,y:-op*360});
+    rev($('s4t1'),t,12.05,.5); rev($('s4t2'),t,12.18,.5);
+    $('s4line').style.transform=`scaleY(${P(t,12.35,1.75,E.inOutCubic).toFixed(4)})`;
+    prows.forEach((r,i)=>{
+      const s=PT[i];
+      const circ=r.querySelector('.circ'); tf(circ,{s:P(t,s,.4,E.outBack),o:t>=s?1:0});
+      const th=r.querySelector('.thumb'); const tp=P(t,s+.06,.45,E.outExpo);
+      th.style.clipPath=`inset(0 ${(100-tp*100).toFixed(2)}% 0 0 round 22px)`; tf(th,{x:(1-tp)*-40});
+      const tx=r.querySelector('.ptx'); const xp=P(t,s+.12,.45,E.outExpo); tf(tx,{x:(1-xp)*80,o:xp});
+      // complete check
+      const ck=P(t,14.35+i*.1,.3,E.outBack);
+      circ.style.background=ck>.02?'#F4B63F':'#FFFBF0';
+      tf(circ.querySelector('.num'),{s:1-clamp(ck),o:1-clamp(ck*2)});
+      tf(circ.querySelector('.chk'),{s:ck,o:clamp(ck*2)});
+    });
+    rev($('s4f'),t,14.6,.5);
+  }
+
+  // ===== S5 =====
+  if(t>15.9&&t<19.8){
+    const ip=P(t,16.0,.42,E.outExpo);
+    tf($('s5'),{y:(1-ip)*1920});
+    rev($('s5k'),t,16.2,.45); rev($('s5t'),t,16.3,.5);
+    const cp=P(t,16.2,.6,E.outExpo);
+    tf($('s5cab'),{x:(1-cp)*900,r:(1-cp)*8,s:1+.035*clamp((t-16.4)/3)});
+    dims.forEach((d,i)=>{
+      const p=P(t,d.t,.45,E.inOutCubic);
+      d.path.style.strokeDashoffset=(d.total*(1-p)).toFixed(2);
+      const lp=P(t,d.t+.25,.4,E.outBack);
+      const v=Math.round(d.val*P(t,d.t+.2,.55,E.outCubic)/10)*10;
+      d.lab.textContent=v.toLocaleString('en-US').replace(',','')+' mm';
+      d.lab.style.transform=`translate(${d.mid[0].toFixed(1)}px,${d.mid[1].toFixed(1)}px) translate(-50%,-50%) rotate(${d.labAng.toFixed(2)}deg) scale(${lp.toFixed(3)})`;
+      d.lab.style.opacity=t>=d.t+.25?1:0;
+    });
+    chips.forEach((c,i)=>{const s=17.65+i*.25;const p=P(t,s,.5,E.outExpo);tf(c,{x:(1-p)*-120,o:P(t,s,.15,E.lin)})});
+  }
+
+  // ===== shutter S5 -> S6 =====
+  // (drawn as part of s6 entry: stripes)
+  // ===== S6 =====
+  if(t>19.4&&t<23.2){
+    const ip=P(t,19.45,.5,E.outExpo);
+    const zp=P(t,22.75,.3,E.inCubic);
+    tf($('s6'),{s:L(1,1.45,zp),o:1-zp,b:zp*20});
+    // reveal with vertical shutter (clip)
+    const sh=P(t,19.45,.45,E.inOutExpo);
+    $('s6').style.clipPath=`inset(0 0 ${((1-sh)*100).toFixed(2)}% 0)`;
+    const dt=t-19.4;
+    tf($('col0'),{y:-260-150*dt}); tf($('col1'),{y:-1050+150*dt}); tf($('col2'),{y:-520-120*dt});
+    tf($('s6wall'),{s:L(1.15,1.0,ip)});
+    rev($('s6k'),t,19.75,.45);
+    strips.forEach((st,i)=>{
+      const n=+st.dataset.n; const p=P(t,19.85+i*.12,.75,E.outQuint);
+      st.style.transform=`translateY(${(-p*n*300).toFixed(2)}px)`;
+      st.parentElement.style.filter=`blur(${(Math.sin(Math.PI*clamp(p*1.15))*6*(1-p)).toFixed(2)}px)`;
+    });
+    rev($('s6l'),t,20.55,.5);
+    badges.forEach((b,i)=>{const s=20.75+i*.13;tf(b,{s:P(t,s,.4,E.outBack),o:t>=s?1:0})});
+    const ta=P(t,21.0,.55,E.outExpo), tb=P(t,21.1,.55,E.outExpo);
+    const A=$('tapeA'),B=$('tapeB');
+    A.style.transform=`translateX(${((1-ta)*-1600).toFixed(1)}px) rotate(-5deg)`;
+    B.style.transform=`translateX(${((1-tb)*1600).toFixed(1)}px) rotate(4deg)`;
+    A.firstElementChild.style.transform=`translateX(${(-((t-19)*170)%tapeW.tapeA).toFixed(1)}px)`;
+    B.firstElementChild.style.transform=`translateX(${(-tapeW.tapeB+((t-19)*150)%tapeW.tapeB).toFixed(1)}px)`;
+  }
+
+  // ===== S7 =====
+  if(t>22.8){
+    const ip=P(t,22.95,.45,E.outCubic);
+    tf($('s7'),{s:L(.9,1,ip),o:ip});
+    const lp=P(t,23.05,.5,E.outBackS);
+    const sw=t>23.2?11*Math.exp(-2.6*(t-23.2))*Math.sin(7.5*(t-23.2)):0;
+    const lg=$('s7logo'); lg.style.transformOrigin='50% 4%';
+    tf(lg,{y:(1-lp)*-700,r:sw,o:t>=23.0?1:0});
+    rev($('s7h1'),t,23.5,.5); rev($('s7h2'),t,23.64,.5);
+    rev($('s7s'),t,23.9,.5);
+    const wp=P(t,24.1,.5,E.outBack);
+    const pulse=t>24.6?1+.025*Math.sin((t-24.6)*2*Math.PI/0.5):1;
+    tf($('wa'),{s:wp*pulse,o:t>=24.1?1:0});
+    ['ring1','ring2'].forEach((id,k)=>{
+      const per=1.0, ph=((t-24.5-k*.5)%per+per)%per/per;
+      const on=t>24.5+k*.5;
+      tf($(id),{s:1+ph*.22,o:on?(1-ph)*.8:0});
+      $(id).style.transform=`scale(${(1+ph*.12).toFixed(4)},${(1+ph*.5).toFixed(4)})`;
+    });
+    const sp=P(t,25.3,.7,E.inOutCubic); tf($('shine'),{x:L(-200,1000,sp),sk:-20});
+    rev($('s7n2'),t,24.45,.5);
+    const fp=P(t,24.7,.6,E.outExpo); tf($('s7f'),{y:(1-fp)*60,o:fp});
+  }
+
+  // bug logo
+  const bugOn=P(t,3.7,.4,E.outCubic)*(1-P(t,22.6,.3,E.lin));
+  const onCream=P(t,16.15,.25,E.lin)*(1-P(t,19.45,.2,E.lin));
+  tf($('bug'),{s:L(.6,1,bugOn),o:bugOn*.92});
+  $('bugW').style.opacity=(1-onCream).toFixed(3); $('bugG').style.opacity=onCream.toFixed(3);
+
+  drawFx(t);
+  // grain
+  const gi=Math.floor(t*30)%gFrames.length; gctx.putImageData(gFrames[gi],0,0);
+}
+
+window.ready=(async()=>{
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i=>i.decode().catch(()=>{})));
+  measure();
+  renderFrame(0);
+  return true;
+})();
+window.renderFrame=renderFrame;
+</script>
+</body>
+</html>
