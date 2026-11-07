@@ -14,6 +14,8 @@ Promo video + promotion plan for **KabinKu Cabin & Container** (https://www.kabi
 
 All on-screen text sits inside the Reels/TikTok safe area, and every message is readable with the sound off.
 
+**Watermark:** the Vyntra badge (from vyntra.site) sits top-right on both cuts at 124px with a soft shadow, 30px from the edges on 9:16 and nudged up on 4:5 to clear the photo cards. It is added at encode time (`motion/assets/vyntra_watermark.png`, see `npm run encode` / `npm run feed`), so the HTML timeline stays clean.
+
 ## The cut (27s, 120 BPM, cuts on the beat)
 
 | Time | Scene | Motion / effect | Source |
@@ -39,7 +41,7 @@ npm install            # fonts, icons, playwright
 npm run build          # inlines icons -> index.html
 npm run frames         # 810 JPEG frames via headless Chromium (~1 min with 4 workers, see render.js args)
 npm run music          # soundtrack -> music.wav (needs python3 + numpy + scipy, ffmpeg)
-npm run encode && npm run feed
+npm run encode && npm run feed   # both add the Vyntra watermark
 ```
 
 Change copy, phone numbers or timing directly in `index.src.html` (timings are the `WT`, `UT`, `PT` arrays and the `P(t, start, duration)` calls). Photos in `motion/assets/` come from kabinku.com.my; `c*.png` are background-removed cut-outs.

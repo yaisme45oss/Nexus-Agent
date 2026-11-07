@@ -7,8 +7,8 @@
     "build": "python3 build.py",
     "frames": "mkdir -p frames && node render.js 0 810 frames",
     "music": "python3 music.py music_raw.wav && ffmpeg -y -i music_raw.wav -af loudnorm=I=-14:TP=-1.5:LRA=9 -ar 48000 music.wav",
-    "encode": "ffmpeg -y -framerate 30 -i frames/%05d.jpg -i music.wav -map 0:v -map 1:a -c:v libx264 -preset slow -crf 22 -maxrate 6M -bufsize 12M -pix_fmt yuv420p -profile:v high -c:a aac -b:a 192k -movflags +faststart -shortest ../deliverables/KabinKu_Reel_9x16.mp4",
-    "feed": "ffmpeg -y -i ../deliverables/KabinKu_Reel_9x16.mp4 -vf crop=1080:1350:0:260 -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -c:a copy -movflags +faststart ../deliverables/KabinKu_Feed_4x5.mp4"
+    "encode": "ffmpeg -y -framerate 30 -i frames/%05d.jpg -i music.wav -i assets/vyntra_watermark.png -filter_complex \"[0:v][2:v]overlay=912:16:format=auto,format=yuv420p[v]\" -map \"[v]\" -map 1:a -c:v libx264 -preset slow -crf 22 -maxrate 6M -bufsize 12M -profile:v high -c:a aac -b:a 192k -ar 48000 -movflags +faststart -shortest ../deliverables/KabinKu_Reel_9x16.mp4",
+    "feed": "ffmpeg -y -framerate 30 -i frames/%05d.jpg -i music.wav -i assets/vyntra_watermark.png -filter_complex \"[0:v]crop=1080:1350:0:260[c];[c][2:v]overlay=912:2:format=auto,format=yuv420p[v]\" -map \"[v]\" -map 1:a -c:v libx264 -preset slow -crf 22 -maxrate 5M -bufsize 10M -profile:v high -c:a aac -b:a 192k -ar 48000 -movflags +faststart -shortest ../deliverables/KabinKu_Feed_4x5.mp4"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",
