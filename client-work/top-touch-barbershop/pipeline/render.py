@@ -552,7 +552,7 @@ def cutout_comp(c, lf, behind, echo=False, glow_col=GOLD):
 _logo = cv2.imread(f'{ASSETS}/vyntra-logo.png', cv2.IMREAD_UNCHANGED).astype(np.float32) / 255
 LOGO = (_logo[..., :3] * _logo[..., 3:4], _logo[..., 3:4])
 WM_SIZE = int(os.environ.get('WM_SIZE', 980))
-WM_OP = float(os.environ.get('WM_OP', 0.25))
+WM_OP = float(os.environ.get('WM_OP', 0.12))
 WM = resize_layer(LOGO, WM_SIZE / 512)
 
 

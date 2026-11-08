@@ -30,7 +30,7 @@ A 30-second vertical promo (1080×1920, 30 fps) for **Top Touch Barbershop, SS15
 
 **Photo-to-video:** the shop photos get 2.5D camera moves, not flat zooms. Nearness is modelled as distance from each room's vanishing point, so in a forward dolly the near walls, floor and ceiling rush past while the far end holds, and in a sideways move the foreground slides further than the back of the room (`depth_warp` in `pipeline/render.py`).
 
-The Vyntra logo watermark is large (980 px, about 90% of the frame width), centred and 25% opaque from 0 to 28.2s, then fades out into the sign-off card. To change it, set `WM_SIZE` (px) and `WM_OP` (0–1) when running `pipeline/render.py`.
+The Vyntra logo watermark is large (980 px, about 90% of the frame width), centred and 12% opaque from 0 to 28.2s, then fades out into the sign-off card. To change it, set `WM_SIZE` (px) and `WM_OP` (0–1) when running `pipeline/render.py`.
 
 **Music:** an original 120 BPM dark-trap bed synthesized by `pipeline/music.py`, so there is no licensing issue. Impacts are timed to the fireball, both freezes, the AFTER reveal and the end card. If the client would rather use a trending sound, add it in the Instagram or TikTok editor and turn the original audio down.
 
