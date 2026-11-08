@@ -52,4 +52,6 @@ ffmpeg -i $W/out/video_noaudio.mp4 -i $W/out/music.wav -map 0:v -map 1:a -c:v li
   -maxrate 10M -bufsize 20M -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart TopTouch_Barbershop_Promo_9x16.mp4
 ```
 
+**Veo clips via the Gemini API:** `python pipeline/veo_gen.py stills veo` generates all seven shots from `stills/` with the prompts in `VEO_PROMPTS.md` and saves them as `veo/<shot>.mp4`. It needs a Gemini API key, either saved as a network secret for `generativelanguage.googleapis.com` (header `x-goog-api-key`) or exported as `GEMINI_API_KEY`. Billing goes to the Google Cloud project behind that key. Add `--models` to list the Veo models the key can use.
+
 To preview single frames instead of a full render: `python pipeline/render.py $W stills $W/preview/p 3.5,14.5,26`.
