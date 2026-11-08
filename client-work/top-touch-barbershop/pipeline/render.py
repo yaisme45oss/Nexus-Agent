@@ -551,7 +551,9 @@ def cutout_comp(c, lf, behind, echo=False, glow_col=GOLD):
 # ---------------------------------------------------------------- watermark
 _logo = cv2.imread(f'{ASSETS}/vyntra-logo.png', cv2.IMREAD_UNCHANGED).astype(np.float32) / 255
 LOGO = (_logo[..., :3] * _logo[..., 3:4], _logo[..., 3:4])
-WM = add_shadow(resize_layer(LOGO, 132 / 512), blur=6, off=(0, 3), op=0.55)
+WM_SIZE = int(os.environ.get('WM_SIZE', 980))
+WM_OP = float(os.environ.get('WM_OP', 0.25))
+WM = resize_layer(LOGO, WM_SIZE / 512)
 
 
 # ================================================================ segments
@@ -862,8 +864,8 @@ def render(fi):
         if a <= gt < b or (i == len(TIMELINE) - 1 and gt >= a):
             break
     img = fn(gt - a, b - a, gt)
-    if gt < 28.5:  # Vyntra watermark
-        paste(img, WM, W - 40 - 66, 300, op=0.9)
+    if gt < 28.5:  # Vyntra watermark: large, centred, semi-transparent; fades out into the sign-off card
+        paste(img, WM, W / 2, H / 2, op=WM_OP * (1 - c01((gt - 28.2) / 0.3)))
     img = grain(img, fi)
     return np.clip(img * 255 + 0.5, 0, 255).astype(np.uint8), i
 
