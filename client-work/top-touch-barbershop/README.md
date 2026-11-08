@@ -17,7 +17,7 @@ A 30-second vertical promo (1080×1920, 30 fps) for **Top Touch Barbershop, SS15
 |---|---|---|
 | 0.0–1.75 | Flame spray styling | Hook "NOT JUST / A HAIRCUT"; the fireball lands on the music impact and flashes to white |
 | 1.75–4.0 | Corridor photo | Ceiling lights switch on from back to front with bloom and dolly in; "WELCOME TO TOP TOUCH BARBERSHOP", SS15 · Subang Jaya |
-| 4.0–10.0 | Shop photos | Photo-to-video moves: orbit plus light sweep (LUXURY), spinning push (BUILT FOR), rack focus (COMFORT & STYLE), framed cinema panel (PREMIUM GROOMING EXPERIENCE) |
+| 4.0–10.0 | Shop photos | Photo-to-video moves: orbit with depth parallax plus light sweep (LUXURY), spinning dolly (BUILT FOR), rack focus (COMFORT & STYLE), framed cinema panel (PREMIUM GROOMING EXPERIENCE) |
 | 10.0–13.0 | Cut montage | PRECISION, CLEAN LINES, BOLD COLOUR, with zoom and whip transitions |
 | 13.0–15.0 | Subject cutout #1 | Freeze frame; client cut out with a white sticker stroke and pop-out; "FADE" behind the subject |
 | 15.0–17.0 | Cut montage | SILVER TONES, SHARP STYLING |
@@ -27,6 +27,8 @@ A 30-second vertical promo (1080×1920, 30 fps) for **Top Touch Barbershop, SS15
 | 23.0–24.0 | Flash montage | Four shop photos at 0.25s each |
 | 24.0–28.5 | End card | TOP TOUCH BARBERSHOP, a "BOOK YOUR SEAT TODAY" button, location, Instagram handle |
 | 28.5–30.0 | Vyntra sign-off | Logo reveal, "PRODUCED BY VYNTRA", vyntra.site |
+
+**Photo-to-video:** the shop photos get 2.5D camera moves, not flat zooms. Nearness is modelled as distance from each room's vanishing point, so in a forward dolly the near walls, floor and ceiling rush past while the far end holds, and in a sideways move the foreground slides further than the back of the room (`depth_warp` in `pipeline/render.py`).
 
 The Vyntra logo watermark sits top-right for 0–28.5s, placed to stay clear of the Reels and TikTok side buttons and caption area.
 

@@ -101,6 +101,30 @@ def cam(img, s=1.0, rot=0.0, tx=0.0, ty=0.0, size=(W, H)):
     return warp(img, M, size)
 
 
+_dw = {}
+VP = {'corridor': (0.45, 0.42), 'ceilingup': (0.5, 0.6), 'wide': (0.5, 0.42), 'corridor2': (0.55, 0.42),
+      'chairs': (0.55, 0.45), 'chairdisc': (0.62, 0.38)}
+
+
+def depth_warp(img, vpn, a=0.0, tx=0.0, ty=0.0):
+    """2.5D camera move on a still. Nearness N grows with distance from the room's vanishing point
+    (walls/floor/ceiling converge there), so a forward dolly magnifies near areas more than the far end
+    (a = dolly amount) and a sideways truck slides near areas further than far ones (tx/ty, px at N=1)."""
+    if a < 1e-4 and abs(tx) < 0.05 and abs(ty) < 0.05:
+        return img
+    h, w = img.shape[:2]; key = (h, w, vpn)
+    if key not in _dw:
+        gy, gx = np.mgrid[0:h, 0:w].astype(np.float32)
+        vx, vy = vpn[0] * w, vpn[1] * h
+        R = max(math.hypot(vx, vy), math.hypot(w - vx, vy), math.hypot(vx, h - vy), math.hypot(w - vx, h - vy))
+        _dw[key] = (gx, gy, vx, vy, (np.hypot(gx - vx, gy - vy) / R).astype(np.float32))
+    gx, gy, vx, vy, N = _dw[key]
+    f = 1.0 / (1.0 + a * N)
+    mx = vx + (gx - vx) * f - tx * N
+    my = vy + (gy - vy) * f - ty * N
+    return cv2.remap(img, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+
+
 def shake(img, amt, t):
     if amt < 0.5:
         return img
@@ -551,7 +575,8 @@ def segB(lt, dur, gt):  # title over corridor — lights switch on
     if img is None:
         base = corridor_lamps(lt, 0.05, 1.1)
         base = base * (0.6 + 0.4 * eo(lt / 0.9))
-        img = cam(base, 1.0 + 0.07 * eio(lt / dur), 0, 0, -20 * lt)
+        base = depth_warp(base, VP['corridor'], a=0.34 * eio(lt / dur))
+        img = cam(base, 1.0 + 0.035 * eio(lt / dur), 0, 0, -10 * lt)
     img = look(img, sat=0.92, con=1.06)
     img = vgrad(img, 560, 1260, 0.62)
     img = dust(img, gt, 0.8)
@@ -573,7 +598,8 @@ def segC(lt, dur, gt):  # luxury chair — orbit + light sweep
     p = lt / dur
     img = veo('chairdisc', lt)
     if img is None:
-        img = cam(STILL['chairdisc'], 1.24 - 0.12 * eio(p), -2.6 + 3.4 * eio(p), 70 - 140 * eio(p), 10)
+        base = depth_warp(STILL['chairdisc'], VP['chairdisc'], a=0.10 * eio(p), tx=60 - 120 * eio(p))
+        img = cam(base, 1.2 - 0.06 * eio(p), -1.6 + 2.6 * eio(p), 30 - 60 * eio(p), 10)
     img = look(img, sat=0.95, con=1.06)
     img = sweep(img, -0.2 + 1.4 * eio((lt - 0.25) / 1.3), 0.07, 0.4)
     img = vgrad(img, 300, 820, 0.55)
@@ -589,7 +615,8 @@ def segD(lt, dur, gt):  # ceiling — spinning dolly
     p = lt / dur
     img = veo('ceilingup', lt)
     if img is None:
-        img = cam(STILL['ceilingup'], 1.12 + 0.28 * eio(p), 7 * eio(p), 0, 0)
+        base = depth_warp(STILL['ceilingup'], VP['ceilingup'], a=0.45 * eio(p))
+        img = cam(base, 1.1 + 0.12 * eio(p), 6 * eio(p), 0, 0)
     img = look(img, sat=0.95, con=1.06)
     img = vgrad(img, 1150, 1550, 0.6)
     img = dust(img, gt)
@@ -749,7 +776,8 @@ def segO(lt, dur, gt):  # moody profile slow-mo + light leak
 def segP(lt, dur, gt):  # rapid still montage
     names = ['corridor2', 'chairs', 'wide', 'ceilingup']
     i = min(int(lt / 0.25), 3); ll = lt - i * 0.25
-    img = cam(STILL[names[i]], 1.28 - 0.14 * eo(ll / 0.25), (-2, 2, -1.5, 1.5)[i], 0, 0)
+    base = depth_warp(STILL[names[i]], VP[names[i]], a=0.4 * eo(ll / 0.25))
+    img = cam(base, 1.2 - 0.06 * eo(ll / 0.25), (-2, 2, -1.5, 1.5)[i], 0, 0)
     img = look(img, sat=0.95, con=1.08)
     if ll < 0.06:
         img = to_white(img, 0.7 * (1 - ll / 0.06))
@@ -759,7 +787,8 @@ def segP(lt, dur, gt):  # rapid still montage
 def segQ(lt, dur, gt):  # end card
     img = veo('wide', lt)
     if img is None:
-        img = cam(STILL['wide'], 1.22 - 0.1 * eio(lt / dur), 0, 0, 0)
+        base = depth_warp(STILL['wide'], VP['wide'], a=0.28 * eio(lt / dur))
+        img = cam(base, 1.16 - 0.04 * eio(lt / dur), 0, 0, 0)
     sig = 9 * eo(lt / 0.7)
     if sig > 0.3:
         img = cv2.GaussianBlur(img, (0, 0), sig)
